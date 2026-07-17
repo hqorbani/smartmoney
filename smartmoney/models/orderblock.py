@@ -1,0 +1,28 @@
+from dataclasses import dataclass
+
+import pandas as pd
+
+from smartmoney.models.fvg import FVG
+
+
+@dataclass(slots=True)
+class OrderBlock:
+    """
+    ICT Order Block
+    """
+
+    index: int
+
+    time: pd.Timestamp
+
+    open: float
+    high: float
+    low: float
+    close: float
+
+    bullish: bool
+
+    # FVG متناظر با این Order Block
+    related_fvg: FVG | None = None
+
+    mitigated: bool = False
