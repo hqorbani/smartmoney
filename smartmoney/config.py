@@ -20,8 +20,8 @@ class Config:
     ]
 
     TIMEFRAMES = [
+        mt5.TIMEFRAME_M1,
         mt5.TIMEFRAME_M5,
-        mt5.TIMEFRAME_M15,
     ]
 
     # ----------------------------
