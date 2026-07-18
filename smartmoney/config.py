@@ -38,6 +38,18 @@ class Config:
     MIN_FVG_SIZE = 0.0
 
     # ----------------------------
+    # Query
+    # ----------------------------
+
+    SORT_BY = "distance"
+
+    SORT_DESCENDING = False
+
+    TOP_SIGNALS = 20
+
+    MINIMUM_SCORE = 0.0
+
+    # ----------------------------
     # Debug
     # ----------------------------
 

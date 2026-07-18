@@ -1,12 +1,16 @@
 import time
-
+from smartmoney.config import Config
 from smartmoney.core.context_manager import ContextManager
 from smartmoney.core.engine import AnalyzerEngine
 from smartmoney.core.mt5 import MT5DataProvider
 from smartmoney.core.scanner_engine import ScannerEngine
 from smartmoney.outputs.output_engine import OutputEngine
+from smartmoney.query.query_engine import QueryEngine
+from smartmoney.repository.signal_repository import SignalRepository
 from smartmoney.scoring.engine import ScoreEngine
-
+from smartmoney.repository.signal_repository import SignalRepository
+from smartmoney.query.query_engine import QueryEngine
+from smartmoney.services.distance_service import DistanceService
 
 class Scheduler:
 
@@ -18,6 +22,9 @@ class Scheduler:
         scanner_engine: ScannerEngine,
         output_engine: OutputEngine,
         score_engine: ScoreEngine,
+        repository: SignalRepository,
+        query_engine: QueryEngine,
+        distance_service: DistanceService,
         symbols: list[str],
         timeframes: list[int],
         candle_count: int,
@@ -32,6 +39,9 @@ class Scheduler:
         self.output_engine = output_engine
         self.score_engine = score_engine
 
+        self.repository = repository
+        self.query_engine = query_engine
+
         self.symbols = symbols
         self.timeframes = timeframes
         self.candle_count = candle_count
@@ -39,6 +49,8 @@ class Scheduler:
         self.interval = interval
 
         self._running = False
+
+        self.distance_service = distance_service
 
     def start(self):
 
@@ -82,21 +94,21 @@ class Scheduler:
                     df=df,
                 )
 
-                # -----------------------------
+                # ------------------------------------------
                 # Analyze
-                # -----------------------------
+                # ------------------------------------------
 
                 self.analyzer_engine.run(context)
 
-                # -----------------------------
+                # ------------------------------------------
                 # Scan
-                # -----------------------------
+                # ------------------------------------------
 
                 signals = self.scanner_engine.run(context)
 
-                # -----------------------------
+                # ------------------------------------------
                 # Score
-                # -----------------------------
+                # ------------------------------------------
 
                 for signal in signals:
 
@@ -107,8 +119,66 @@ class Scheduler:
 
                 all_signals.extend(signals)
 
-        # -----------------------------
-        # Publish Outputs
-        # -----------------------------
+        # ------------------------------------------
+        # Repository
+        # ------------------------------------------
 
-        self.output_engine.publish(all_signals)
+        self.repository.replace(all_signals)
+
+        # ------------------------------------------
+        # Query
+        # ------------------------------------------
+
+        queried_signals = self.query_engine.query(
+            self.repository.all(),
+            sort_by="score",
+            descending=True,
+            limit=20,
+        )
+
+        # ------------------------------------------
+        # Output
+        # ------------------------------------------
+
+        # -------------------------------------------------
+        # Update distance
+        # -------------------------------------------------
+
+        for signal in all_signals:
+
+            current_price = self.provider.get_current_price(
+                signal.symbol,
+            )
+
+            self.distance_service.calculate(
+                signal,
+                current_price,
+            )
+
+        # -------------------------------------------------
+        # Repository
+        # -------------------------------------------------
+
+        self.repository.replace(all_signals)
+
+        # -------------------------------------------------
+        # Query
+        # -------------------------------------------------
+
+        signals = self.query_engine.query(
+            self.repository.all(),
+
+            minimum_score=Config.MINIMUM_SCORE,
+
+            sort_by=Config.SORT_BY,
+
+            descending=Config.SORT_DESCENDING,
+
+            limit=Config.TOP_SIGNALS,
+        )
+
+        # -------------------------------------------------
+        # Publish
+        # -------------------------------------------------
+
+        self.output_engine.publish(signals)

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 from smartmoney.models.signal import Signal
 
 
@@ -7,10 +9,12 @@ class QueryEngine:
 
     def query(
         self,
-        signals: list[Signal],
+        signals: Iterable[Signal],
         *,
         symbol: str | None = None,
         timeframe: int | None = None,
+        strategy: str | None = None,
+        direction: str | None = None,
         minimum_score: float | None = None,
         sort_by: str = "score",
         descending: bool = True,
@@ -19,9 +23,9 @@ class QueryEngine:
 
         result = list(signals)
 
-        # -----------------------------------------
+        # --------------------------------------------------
         # Filters
-        # -----------------------------------------
+        # --------------------------------------------------
 
         if symbol is not None:
 
@@ -39,6 +43,22 @@ class QueryEngine:
                 if s.timeframe == timeframe
             ]
 
+        if strategy is not None:
+
+            result = [
+                s
+                for s in result
+                if s.strategy == strategy
+            ]
+
+        if direction is not None:
+
+            result = [
+                s
+                for s in result
+                if s.direction == direction
+            ]
+
         if minimum_score is not None:
 
             result = [
@@ -47,26 +67,40 @@ class QueryEngine:
                 if s.score >= minimum_score
             ]
 
-        # -----------------------------------------
+        # --------------------------------------------------
         # Sorting
-        # -----------------------------------------
+        # --------------------------------------------------
 
-        key_functions = {
+        sort_keys = {
 
             "score":
                 lambda s: s.score,
 
+            "distance":
+                lambda s: s.distance,
+
             "time":
                 lambda s: s.time,
 
-            "price":
-                lambda s: s.price,
+            "symbol":
+                lambda s: s.symbol,
 
+            "strategy":
+                lambda s: s.strategy,
+
+            "direction":
+                lambda s: s.direction,
+
+            "price_low":
+                lambda s: s.price_low,
+
+            "price_high":
+                lambda s: s.price_high,
         }
 
-        key = key_functions.get(
+        key = sort_keys.get(
             sort_by,
-            key_functions["score"],
+            sort_keys["score"],
         )
 
         result.sort(
@@ -74,9 +108,9 @@ class QueryEngine:
             reverse=descending,
         )
 
-        # -----------------------------------------
+        # --------------------------------------------------
         # Limit
-        # -----------------------------------------
+        # --------------------------------------------------
 
         if limit is not None:
 

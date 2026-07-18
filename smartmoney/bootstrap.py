@@ -18,6 +18,12 @@ from smartmoney.outputs.output_engine import OutputEngine
 
 from smartmoney.visualization.chart import ChartVisualizer
 
+from smartmoney.repository.signal_repository import SignalRepository
+from smartmoney.query.query_engine import QueryEngine
+
+from smartmoney.query.query_engine import QueryEngine
+from smartmoney.repository.signal_repository import SignalRepository
+from smartmoney.services.distance_service import DistanceService
 
 # ==========================================================
 # Provider
@@ -123,6 +129,10 @@ def _create_output_engine() -> OutputEngine:
 
 def create_live_scheduler() -> Scheduler:
 
+    repository = SignalRepository()
+    query_engine = QueryEngine()
+    distance_service = DistanceService()
+
     provider = create_provider()
 
     scheduler = Scheduler(
@@ -135,9 +145,15 @@ def create_live_scheduler() -> Scheduler:
 
         scanner_engine=_create_scanner_engine(),
 
+        output_engine=_create_output_engine(),
+
         score_engine=_create_score_engine(),
 
-        output_engine=_create_output_engine(),
+        repository=repository,
+
+        query_engine=query_engine,
+
+        distance_service=distance_service,
 
         symbols=Config.SYMBOLS,
 

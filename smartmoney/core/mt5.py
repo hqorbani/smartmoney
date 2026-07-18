@@ -120,3 +120,40 @@ class MT5DataProvider:
         )
 
         return df
+    
+    def get_current_tick(
+        self,
+        symbol: str,
+    ):
+        """
+        Return current market tick.
+        """
+
+        self.symbol_select(symbol)
+
+        tick = mt5.symbol_info_tick(symbol)
+
+        if tick is None:
+
+            code, message = mt5.last_error()
+
+            raise RuntimeError(
+                f"Cannot get current tick ({code}): {message}"
+            )
+
+        return tick
+    
+    def get_current_price(
+        self,
+        symbol: str,
+    ) -> float:
+        """
+        Return current market price.
+
+        Mid price is used:
+            (Bid + Ask) / 2
+        """
+
+        tick = self.get_current_tick(symbol)
+
+        return (tick.bid + tick.ask) / 2
