@@ -1,16 +1,18 @@
 import time
+
 from smartmoney.config import Config
 from smartmoney.core.context_manager import ContextManager
 from smartmoney.core.engine import AnalyzerEngine
 from smartmoney.core.mt5 import MT5DataProvider
 from smartmoney.core.scanner_engine import ScannerEngine
+
 from smartmoney.outputs.output_engine import OutputEngine
+from smartmoney.query.query import Query
 from smartmoney.query.query_engine import QueryEngine
 from smartmoney.repository.signal_repository import SignalRepository
 from smartmoney.scoring.engine import ScoreEngine
-from smartmoney.repository.signal_repository import SignalRepository
-from smartmoney.query.query_engine import QueryEngine
 from smartmoney.services.distance_service import DistanceService
+
 
 class Scheduler:
 
@@ -41,6 +43,7 @@ class Scheduler:
 
         self.repository = repository
         self.query_engine = query_engine
+        self.distance_service = distance_service
 
         self.symbols = symbols
         self.timeframes = timeframes
@@ -50,7 +53,7 @@ class Scheduler:
 
         self._running = False
 
-        self.distance_service = distance_service
+    # ---------------------------------------------------------
 
     def start(self):
 
@@ -70,13 +73,21 @@ class Scheduler:
 
             self.provider.shutdown()
 
+    # ---------------------------------------------------------
+
     def stop(self):
 
         self._running = False
 
+    # ---------------------------------------------------------
+
     def run_once(self):
 
         all_signals = []
+
+        # -----------------------------------------
+        # Scan all markets
+        # -----------------------------------------
 
         for symbol in self.symbols:
 
@@ -94,21 +105,21 @@ class Scheduler:
                     df=df,
                 )
 
-                # ------------------------------------------
+                # ----------------------------
                 # Analyze
-                # ------------------------------------------
+                # ----------------------------
 
                 self.analyzer_engine.run(context)
 
-                # ------------------------------------------
+                # ----------------------------
                 # Scan
-                # ------------------------------------------
+                # ----------------------------
 
                 signals = self.scanner_engine.run(context)
 
-                # ------------------------------------------
+                # ----------------------------
                 # Score
-                # ------------------------------------------
+                # ----------------------------
 
                 for signal in signals:
 
@@ -117,56 +128,28 @@ class Scheduler:
                         context,
                     )
 
+                    current_price = self.provider.get_current_price(
+                        signal.symbol,
+                    )
+
+                    self.distance_service.calculate(
+                        signal,
+                        current_price,
+                    )
+
                 all_signals.extend(signals)
 
-        # ------------------------------------------
+        # -----------------------------------------
         # Repository
-        # ------------------------------------------
+        # -----------------------------------------
 
         self.repository.replace(all_signals)
 
-        # ------------------------------------------
+        # -----------------------------------------
         # Query
-        # ------------------------------------------
+        # -----------------------------------------
 
-        queried_signals = self.query_engine.query(
-            self.repository.all(),
-            sort_by="score",
-            descending=True,
-            limit=20,
-        )
-
-        # ------------------------------------------
-        # Output
-        # ------------------------------------------
-
-        # -------------------------------------------------
-        # Update distance
-        # -------------------------------------------------
-
-        for signal in all_signals:
-
-            current_price = self.provider.get_current_price(
-                signal.symbol,
-            )
-
-            self.distance_service.calculate(
-                signal,
-                current_price,
-            )
-
-        # -------------------------------------------------
-        # Repository
-        # -------------------------------------------------
-
-        self.repository.replace(all_signals)
-
-        # -------------------------------------------------
-        # Query
-        # -------------------------------------------------
-
-        signals = self.query_engine.query(
-            self.repository.all(),
+        query = Query(
 
             minimum_score=Config.MINIMUM_SCORE,
 
@@ -175,10 +158,21 @@ class Scheduler:
             descending=Config.SORT_DESCENDING,
 
             limit=Config.TOP_SIGNALS,
+
         )
 
-        # -------------------------------------------------
-        # Publish
-        # -------------------------------------------------
+        queried_signals = self.query_engine.query(
 
-        self.output_engine.publish(signals)
+            self.repository.all(),
+
+            query,
+
+        )
+
+        # -----------------------------------------
+        # Outputs
+        # -----------------------------------------
+
+        self.output_engine.publish(
+            queried_signals,
+        )

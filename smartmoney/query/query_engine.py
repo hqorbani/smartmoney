@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from smartmoney.models.signal import Signal
+from smartmoney.query.query import Query
 
 
 class QueryEngine:
@@ -10,110 +11,101 @@ class QueryEngine:
     def query(
         self,
         signals: Iterable[Signal],
-        *,
-        symbol: str | None = None,
-        timeframe: int | None = None,
-        strategy: str | None = None,
-        direction: str | None = None,
-        minimum_score: float | None = None,
-        sort_by: str = "score",
-        descending: bool = True,
-        limit: int | None = None,
+        query: Query,
     ) -> list[Signal]:
 
         result = list(signals)
 
-        # --------------------------------------------------
+        # ----------------------------------------
         # Filters
-        # --------------------------------------------------
+        # ----------------------------------------
 
-        if symbol is not None:
-
-            result = [
-                s
-                for s in result
-                if s.symbol == symbol
-            ]
-
-        if timeframe is not None:
+        if query.symbol is not None:
 
             result = [
-                s
-                for s in result
-                if s.timeframe == timeframe
+                signal
+                for signal in result
+                if signal.symbol == query.symbol
             ]
 
-        if strategy is not None:
+        if query.timeframe is not None:
 
             result = [
-                s
-                for s in result
-                if s.strategy == strategy
+                signal
+                for signal in result
+                if signal.timeframe == query.timeframe
             ]
 
-        if direction is not None:
+        if query.strategy is not None:
 
             result = [
-                s
-                for s in result
-                if s.direction == direction
+                signal
+                for signal in result
+                if signal.strategy == query.strategy
             ]
 
-        if minimum_score is not None:
+        if query.direction is not None:
 
             result = [
-                s
-                for s in result
-                if s.score >= minimum_score
+                signal
+                for signal in result
+                if signal.direction == query.direction
             ]
 
-        # --------------------------------------------------
+        result = [
+            signal
+            for signal in result
+            if signal.score >= query.minimum_score
+        ]
+
+        # ----------------------------------------
         # Sorting
-        # --------------------------------------------------
+        # ----------------------------------------
 
         sort_keys = {
 
             "score":
-                lambda s: s.score,
+                lambda signal: signal.score,
 
             "distance":
-                lambda s: s.distance,
+                lambda signal: signal.distance,
 
             "time":
-                lambda s: s.time,
+                lambda signal: signal.time,
 
             "symbol":
-                lambda s: s.symbol,
+                lambda signal: signal.symbol,
 
             "strategy":
-                lambda s: s.strategy,
+                lambda signal: signal.strategy,
 
             "direction":
-                lambda s: s.direction,
+                lambda signal: signal.direction,
 
             "price_low":
-                lambda s: s.price_low,
+                lambda signal: signal.price_low,
 
             "price_high":
-                lambda s: s.price_high,
+                lambda signal: signal.price_high,
+
         }
 
         key = sort_keys.get(
-            sort_by,
+            query.sort_by,
             sort_keys["score"],
         )
 
         result.sort(
             key=key,
-            reverse=descending,
+            reverse=query.descending,
         )
 
-        # --------------------------------------------------
+        # ----------------------------------------
         # Limit
-        # --------------------------------------------------
+        # ----------------------------------------
 
-        if limit is not None:
+        if query.limit is not None:
 
-            result = result[:limit]
+            result = result[: query.limit]
 
         return result

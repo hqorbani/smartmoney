@@ -15,13 +15,13 @@ class Config:
     SCAN_INTERVAL = 3
 
     SYMBOLS = [
-        "NAS100",
         "XAUUSD",
+        "NAS100",
     ]
 
     TIMEFRAMES = [
-        mt5.TIMEFRAME_M1,
         mt5.TIMEFRAME_M5,
+        mt5.TIMEFRAME_M15,
     ]
 
     # ----------------------------
@@ -35,7 +35,7 @@ class Config:
     # FVG
     # ----------------------------
 
-    MIN_FVG_SIZE = 0.0
+    MIN_FVG_SIZE = 0.1
 
     # ----------------------------
     # Query
@@ -45,7 +45,7 @@ class Config:
 
     SORT_DESCENDING = False
 
-    TOP_SIGNALS = 20
+    TOP_SIGNALS = 50
 
     MINIMUM_SCORE = 0.0
 

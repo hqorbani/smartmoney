@@ -6,7 +6,7 @@ from smartmoney.visualization.chart import ChartVisualizer
 def main():
 
     context = create_chart_context(
-        symbol=Config.SYMBOLS[0],
+        symbol=Config.SYMBOLS[5],
         timeframe=Config.TIMEFRAMES[0],
     )
 
