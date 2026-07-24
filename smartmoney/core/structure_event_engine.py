@@ -1,8 +1,10 @@
 from smartmoney.core.context import MarketContext
+
 from smartmoney.models.structure_event import (
     StructureEvent,
     StructureEventType,
 )
+
 from smartmoney.models.swing_relation import (
     SwingRelation,
     SwingRelationType,
@@ -36,6 +38,22 @@ class StructureEventEngine:
                 )
             )
 
+        elif self._is_bullish_weakness(relations):
+
+            events.append(
+                StructureEvent(
+                    type=StructureEventType.BULLISH_WEAKNESS,
+                )
+            )
+
+        elif self._is_bearish_weakness(relations):
+
+            events.append(
+                StructureEvent(
+                    type=StructureEventType.BEARISH_WEAKNESS,
+                )
+            )
+
         return events
 
     # ---------------------------------------------------------
@@ -45,20 +63,14 @@ class StructureEventEngine:
         relations: list[SwingRelation],
     ) -> bool:
 
-        if len(relations) < 3:
-            return False
-
-        pattern = [
-            relations[-3].relation,
-            relations[-2].relation,
-            relations[-1].relation,
-        ]
-
-        return pattern == [
-            SwingRelationType.HIGHER_HIGH,
-            SwingRelationType.HIGHER_LOW,
-            SwingRelationType.HIGHER_HIGH,
-        ]
+        return self._match_pattern(
+            relations,
+            [
+                SwingRelationType.HIGHER_HIGH,
+                SwingRelationType.HIGHER_LOW,
+                SwingRelationType.HIGHER_HIGH,
+            ],
+        )
 
     # ---------------------------------------------------------
 
@@ -67,17 +79,62 @@ class StructureEventEngine:
         relations: list[SwingRelation],
     ) -> bool:
 
-        if len(relations) < 3:
+        return self._match_pattern(
+            relations,
+            [
+                SwingRelationType.LOWER_LOW,
+                SwingRelationType.LOWER_HIGH,
+                SwingRelationType.LOWER_LOW,
+            ],
+        )
+
+    # ---------------------------------------------------------
+
+    def _is_bullish_weakness(
+        self,
+        relations: list[SwingRelation],
+    ) -> bool:
+
+        return self._match_pattern(
+            relations,
+            [
+                SwingRelationType.HIGHER_HIGH,
+                SwingRelationType.HIGHER_LOW,
+                SwingRelationType.LOWER_HIGH,
+            ],
+        )
+
+    # ---------------------------------------------------------
+
+    def _is_bearish_weakness(
+        self,
+        relations: list[SwingRelation],
+    ) -> bool:
+
+        return self._match_pattern(
+            relations,
+            [
+                SwingRelationType.LOWER_LOW,
+                SwingRelationType.LOWER_HIGH,
+                SwingRelationType.HIGHER_LOW,
+            ],
+        )
+
+    # ---------------------------------------------------------
+
+    def _match_pattern(
+        self,
+        relations: list[SwingRelation],
+        pattern: list[SwingRelationType],
+    ) -> bool:
+
+        if len(relations) < len(pattern):
+
             return False
 
-        pattern = [
-            relations[-3].relation,
-            relations[-2].relation,
-            relations[-1].relation,
+        recent = [
+            relation.relation
+            for relation in relations[-len(pattern):]
         ]
 
-        return pattern == [
-            SwingRelationType.LOWER_LOW,
-            SwingRelationType.LOWER_HIGH,
-            SwingRelationType.LOWER_LOW,
-        ]
+        return recent == pattern
