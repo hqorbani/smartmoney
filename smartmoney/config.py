@@ -15,11 +15,11 @@ class Config:
     SCAN_INTERVAL = 3
 
     SYMBOLS = [
-        "XAUUSD",
+        "NAS100",
     ]
 
     TIMEFRAMES = [
-        mt5.TIMEFRAME_M5,
+        mt5.TIMEFRAME_M1,
     ]
 
     # ----------------------------
