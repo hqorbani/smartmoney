@@ -21,10 +21,10 @@ from smartmoney.visualization.chart import ChartVisualizer
 from smartmoney.repository.signal_repository import SignalRepository
 from smartmoney.query.query_engine import QueryEngine
 
-from smartmoney.query.query_engine import QueryEngine
-from smartmoney.repository.signal_repository import SignalRepository
 from smartmoney.services.distance_service import DistanceService
-
+from smartmoney.core.market_structure_engine import (
+    MarketStructureEngine,
+)
 # ==========================================================
 # Provider
 # ==========================================================
@@ -149,6 +149,8 @@ def create_live_scheduler() -> Scheduler:
 
         score_engine=_create_score_engine(),
 
+        market_structure_engine=create_market_structure_engine(),
+
         repository=repository,
 
         query_engine=query_engine,
@@ -206,6 +208,5 @@ def create_chart_context(
     return context
 
 
-def create_market_structure_engine():
-
+def create_market_structure_engine() -> MarketStructureEngine:
     return MarketStructureEngine()

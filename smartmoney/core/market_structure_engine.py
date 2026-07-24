@@ -1,13 +1,11 @@
 from smartmoney.core.context import MarketContext
+from smartmoney.models.market_structure import MarketBias
+from smartmoney.models.swing_relation import SwingRelationType
 
 
 class MarketStructureEngine:
     """
-    Maintains the current structural state
-    of the market.
-
-    This class will become the single source of truth
-    for BOS / CHOCH / Trend.
+    Computes the current market state from swing relations.
     """
 
     def update(
@@ -15,5 +13,27 @@ class MarketStructureEngine:
         context: MarketContext,
     ) -> None:
 
-        # implemented in next commits
-        return
+        structure = context.market_structure
+
+        if not context.swing_relations:
+            structure.bias = MarketBias.UNKNOWN
+            return
+
+        last = context.swing_relations[-1]
+
+        match last.relation:
+
+            case (
+                SwingRelationType.HIGHER_HIGH
+                | SwingRelationType.HIGHER_LOW
+            ):
+                structure.bias = MarketBias.BULLISH
+
+            case (
+                SwingRelationType.LOWER_HIGH
+                | SwingRelationType.LOWER_LOW
+            ):
+                structure.bias = MarketBias.BEARISH
+
+            case _:
+                structure.bias = MarketBias.UNKNOWN

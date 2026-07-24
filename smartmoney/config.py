@@ -16,12 +16,10 @@ class Config:
 
     SYMBOLS = [
         "XAUUSD",
-        "NAS100",
     ]
 
     TIMEFRAMES = [
         mt5.TIMEFRAME_M5,
-        mt5.TIMEFRAME_M15,
     ]
 
     # ----------------------------
