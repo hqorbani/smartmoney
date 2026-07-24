@@ -25,6 +25,11 @@ from smartmoney.services.distance_service import DistanceService
 from smartmoney.core.market_structure_engine import (
     MarketStructureEngine,
 )
+
+from smartmoney.core.structure_event_engine import (
+    StructureEventEngine,
+)
+
 # ==========================================================
 # Provider
 # ==========================================================
@@ -149,6 +154,8 @@ def create_live_scheduler() -> Scheduler:
 
         score_engine=_create_score_engine(),
 
+        structure_event_engine=create_structure_event_engine(),
+
         market_structure_engine=create_market_structure_engine(),
 
         repository=repository,
@@ -210,3 +217,12 @@ def create_chart_context(
 
 def create_market_structure_engine() -> MarketStructureEngine:
     return MarketStructureEngine()
+
+
+# ==========================================================
+# Structure Event Engine
+# ==========================================================
+
+def create_structure_event_engine() -> StructureEventEngine:
+
+    return StructureEventEngine()

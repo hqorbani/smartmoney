@@ -13,9 +13,12 @@ from smartmoney.repository.signal_repository import SignalRepository
 from smartmoney.scoring.engine import ScoreEngine
 from smartmoney.services.distance_service import DistanceService
 
+
 from smartmoney.core.market_structure_engine import (
-    MarketStructureEngine,
+    MarketStructureEngine
 )
+
+from smartmoney.core.structure_event_engine import StructureEventEngine
 
 class Scheduler:
 
@@ -28,6 +31,7 @@ class Scheduler:
         output_engine: OutputEngine,
         score_engine: ScoreEngine,
         market_structure_engine: MarketStructureEngine,
+        structure_event_engine: StructureEventEngine,
         repository: SignalRepository,
         query_engine: QueryEngine,
         distance_service: DistanceService,
@@ -45,6 +49,7 @@ class Scheduler:
         self.output_engine = output_engine
         self.score_engine = score_engine
         self.market_structure_engine = market_structure_engine
+        self.structure_event_engine = structure_event_engine
         self.repository = repository
         self.query_engine = query_engine
         self.distance_service = distance_service
@@ -114,7 +119,15 @@ class Scheduler:
                 # ----------------------------
 
                 self.analyzer_engine.run(context)
-                self.market_structure_engine.update(context)
+
+                events = self.structure_event_engine.run(
+                    context,
+                )
+
+                self.market_structure_engine.update(
+                    context,
+                    events,
+                ) 
                 # ----------------------------
                 # Scan
                 # ----------------------------
