@@ -6,7 +6,7 @@ from smartmoney.models.swing import Swing
 from smartmoney.models.structure import Structure
 from smartmoney.models.fvg import FVG
 from smartmoney.models.orderblock import OrderBlock
-
+from smartmoney.models.market_structure import MarketStructure
 
 @dataclass
 class MarketContext:
@@ -26,3 +26,7 @@ class MarketContext:
     fvgs: list[FVG] = field(default_factory=list)
 
     orderblocks: list[OrderBlock] = field(default_factory=list)
+
+    market_structure: MarketStructure = field(
+        default_factory=MarketStructure
+    )
