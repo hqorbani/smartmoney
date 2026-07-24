@@ -10,7 +10,7 @@ class Config:
     # MT5
     # ----------------------------
 
-    HISTORY_BARS = 500
+    HISTORY_BARS = 100
 
     SCAN_INTERVAL = 3
 
@@ -45,7 +45,7 @@ class Config:
 
     SORT_DESCENDING = False
 
-    TOP_SIGNALS = 50
+    TOP_SIGNALS = 10
 
     MINIMUM_SCORE = 0.0
 
