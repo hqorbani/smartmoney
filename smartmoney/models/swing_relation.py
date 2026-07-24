@@ -18,6 +18,8 @@ class SwingRelationType(Enum):
 @dataclass(slots=True)
 class SwingRelation:
 
-    swing: Swing
+    previous: Swing
+
+    current: Swing
 
     relation: SwingRelationType
