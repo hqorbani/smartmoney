@@ -204,3 +204,8 @@ def create_chart_context(
     analyzer_engine.run(context)
 
     return context
+
+
+def create_market_structure_engine():
+
+    return MarketStructureEngine()
