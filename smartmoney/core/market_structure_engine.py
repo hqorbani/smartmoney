@@ -85,16 +85,20 @@ class MarketStructureEngine:
                 events,
             )
         # ---------- Debug ----------
+        structure = context.market_structure
+
         print()
-        print(
-            context.symbol,
-            context.timeframe,
-        )
-        print(
-            structure.bias.name,
-            structure.protected_high,
-            structure.protected_low,
-        )
+        print(context.symbol, context.timeframe)
+
+        print("Bias:", structure.bias.name)
+
+        print("Protected High :", structure.protected_high.price)
+
+        print("Protected Low  :", structure.protected_low.price)
+
+        print("Structural High:", structure.structural_high.price)
+
+        print("Structural Low :", structure.structural_low.price)
     # ==================================================
     # UNKNOWN
     # ==================================================
@@ -197,10 +201,9 @@ class MarketStructureEngine:
         context: MarketContext,
     ) -> None:
 
-        self._find_initial_protected_low(
-            context,
-        )
+        self._find_initial_protected_low(context)
 
+        self._find_initial_structural_high(context)
     # --------------------------------------------------
 
     def _initialize_bearish(
@@ -208,10 +211,9 @@ class MarketStructureEngine:
         context: MarketContext,
     ) -> None:
 
-        self._find_initial_protected_high(
-            context,
-        )
+        self._find_initial_protected_high(context)
 
+        self._find_initial_structural_low(context)
     # ==================================================
     # Protected Levels
     # ==================================================
@@ -237,9 +239,8 @@ class MarketStructureEngine:
 
                 swing = relations[i + 1].current
 
-                structure.protected_low = swing.price
-
-                structure.protected_low_swing_index = swing.index
+                structure.protected_low.price = swing.price
+                structure.protected_low.swing_index = swing.index                
 
                 return
 
@@ -266,9 +267,58 @@ class MarketStructureEngine:
 
                 swing = relations[i + 1].current
 
-                structure.protected_high = swing.price
-
-                structure.protected_high_swing_index = swing.index
+                structure.protected_high.price = swing.price
+                structure.protected_high.swing_index = swing.index
 
                 return
 
+    def _find_initial_structural_high(
+        self,
+        context: MarketContext,
+    ) -> None:
+
+        relations = context.swing_relations
+
+        structure = context.market_structure
+
+        for i in range(len(relations) - 3, -1, -1):
+
+            pattern = (
+                relations[i].relation,
+                relations[i + 1].relation,
+                relations[i + 2].relation,
+            )
+
+            if pattern == self._INITIAL_BULLISH_PATTERN:
+
+                swing = relations[i + 2].current
+                structure.structural_high.price = swing.price
+                structure.structural_high.swing_index = swing.index
+
+                return
+
+    def _find_initial_structural_low(
+        self,
+        context: MarketContext,
+    ) -> None:
+
+        relations = context.swing_relations
+
+        structure = context.market_structure
+
+        for i in range(len(relations) - 3, -1, -1):
+
+            pattern = (
+                relations[i].relation,
+                relations[i + 1].relation,
+                relations[i + 2].relation,
+            )
+
+            if pattern == self._INITIAL_BEARISH_PATTERN:
+
+                swing = relations[i + 2].current
+
+                structure.structural_low.price = swing.price
+                structure.structural_low.swing_index = swing.index
+
+                return            

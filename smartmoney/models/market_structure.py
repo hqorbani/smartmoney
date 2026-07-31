@@ -1,5 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
+
+from smartmoney.models.structure_level import StructureLevel
 
 
 class MarketBias(Enum):
@@ -12,17 +14,16 @@ class MarketBias(Enum):
 @dataclass(slots=True)
 class MarketStructure:
     """
-    Represents the current market structure state.
+    Represents current ICT market structure state.
 
-    This model is intentionally passive and contains
-    no business logic.
+    Pure data model.
 
-    All state transitions are handled by
+    All business logic belongs to
     MarketStructureEngine.
     """
 
     # --------------------------------------------------
-    # Current market bias
+    # Current Bias
     # --------------------------------------------------
 
     bias: MarketBias = MarketBias.UNKNOWN
@@ -36,13 +37,21 @@ class MarketStructure:
     choch_count: int = 0
 
     # --------------------------------------------------
-    # ICT Protected Levels
+    # ICT Levels
     # --------------------------------------------------
 
-    protected_high: float | None = None
+    protected_high: StructureLevel = field(
+        default_factory=StructureLevel,
+    )
 
-    protected_low: float | None = None
+    protected_low: StructureLevel = field(
+        default_factory=StructureLevel,
+    )
 
-    protected_high_swing_index: int | None = None
+    structural_high: StructureLevel = field(
+        default_factory=StructureLevel,
+    )
 
-    protected_low_swing_index: int | None = None
+    structural_low: StructureLevel = field(
+        default_factory=StructureLevel,
+    )
