@@ -67,14 +67,14 @@ class SwingRelationAnalyzer(Analyzer):
                 last_low = swing
 
         # ---------- TEMP DEBUG ----------
-        print()
-        print(f"{context.symbol} {context.timeframe}")
-        print(f"Relations : {len(context.swing_relations)}")
+        # print()
+        # print(f"{context.symbol} {context.timeframe}")
+        # print(f"Relations : {len(context.swing_relations)}")
 
-        for relation in context.swing_relations[-10:]:
+        # for relation in context.swing_relations[-10:]:
 
-            print(
-                relation.relation.value,
-                relation.current.time,
-                f"{relation.current.price:.5f}",
-            )
+        #     print(
+        #         relation.relation.value,
+        #         relation.current.time,
+        #         f"{relation.current.price:.5f}",
+        #     )

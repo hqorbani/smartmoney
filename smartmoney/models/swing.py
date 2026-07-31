@@ -18,3 +18,5 @@ class Swing:
     is_high: bool
 
     is_valid: bool = True
+
+    is_broken: bool = False

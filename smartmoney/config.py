@@ -10,12 +10,12 @@ class Config:
     # MT5
     # ----------------------------
 
-    HISTORY_BARS = 400
+    HISTORY_BARS = 500
 
     SCAN_INTERVAL = 3
 
     SYMBOLS = [
-        "XAUUSD",
+        "NAS100",
     ]
     #----------
     #-SYMBOLS = [
@@ -29,7 +29,7 @@ class Config:
     #-]
 
     TIMEFRAMES = [
-        mt5.TIMEFRAME_M5,
+        mt5.TIMEFRAME_M1,
     ]
 
     # ----------------------------

@@ -94,16 +94,16 @@ class OrderBlockAnalyzer(Analyzer):
 
                         break
 
-        if Config.PRINT_ORDERBLOCKS:
+        # if Config.PRINT_ORDERBLOCKS:
 
-            print()
-            print(f"{context.symbol} {context.timeframe}")
-            print(f"OrderBlocks : {len(context.orderblocks)}")
+        #     print()
+        #     print(f"{context.symbol} {context.timeframe}")
+        #     print(f"OrderBlocks : {len(context.orderblocks)}")
 
-            for ob in context.orderblocks[-10:]:
+        #     for ob in context.orderblocks[-10:]:
 
-                print(
-                    f"{'BULL' if ob.bullish else 'BEAR'} | "
-                    f"{ob.time} | "
-                    f"{ob.low:.5f} -> {ob.high:.5f}"
-                )
+        #         print(
+        #             f"{'BULL' if ob.bullish else 'BEAR'} | "
+        #             f"{ob.time} | "
+        #             f"{ob.low:.5f} -> {ob.high:.5f}"
+        #         )

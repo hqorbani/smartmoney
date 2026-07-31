@@ -56,16 +56,16 @@ class SwingAnalyzer(Analyzer):
                         is_high=False,
                     )
                 )
-        if Config.PRINT_SWINGS:
+        # if Config.PRINT_SWINGS:
 
-            print('----*****--------')
-            print(f"{context.symbol} {context.timeframe}")
-            print(f"Swings : {len(context.swings)}")
+        #     print('----*****--------')
+        #     print(f"{context.symbol} {context.timeframe}")
+        #     print(f"Swings : {len(context.swings)}")
 
-            for swing in context.swings[-10:]:
+        #     for swing in context.swings[-10:]:
 
-                print(
-                    f"{'HIGH' if swing.is_high else 'LOW '} | "
-                    f"{swing.time} | "
-                    f"{swing.price:.5f}"
-                )
+        #         print(
+        #             f"{'HIGH' if swing.is_high else 'LOW '} | "
+        #             f"{swing.time} | "
+        #             f"{swing.price:.5f}"
+        #         )

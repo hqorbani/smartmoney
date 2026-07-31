@@ -79,15 +79,15 @@ class FVGAnalyzer(Analyzer):
 
                     )
 
-        if Config.PRINT_FVGS:
-            print()
-            print(f"{context.symbol} {context.timeframe}")
-            print(f"FVGs : {len(context.fvgs)}")
+        # if Config.PRINT_FVGS:
+        #     print()
+        #     print(f"{context.symbol} {context.timeframe}")
+        #     print(f"FVGs : {len(context.fvgs)}")
 
-            for fvg in context.fvgs[-10:]:
+        #     for fvg in context.fvgs[-10:]:
 
-                print(
-                    f"{'BULL' if fvg.bullish else 'BEAR'} | "
-                    f"{fvg.status.value} | "
-                    f"{fvg.low:.5f} -> {fvg.high:.5f}"
-                )
+        #         print(
+        #             f"{'BULL' if fvg.bullish else 'BEAR'} | "
+        #             f"{fvg.status.value} | "
+        #             f"{fvg.low:.5f} -> {fvg.high:.5f}"
+        #         )

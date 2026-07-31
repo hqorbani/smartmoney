@@ -13,6 +13,7 @@ from smartmoney.models.swing_relation import (
     SwingRelationType,
 )
 
+from smartmoney.models.swing import Swing
 
 class MarketStructureEngine:
     """
@@ -57,12 +58,39 @@ class MarketStructureEngine:
 
         structure = context.market_structure
 
+        #
+        # UNKNOWN
+        #
+
         if structure.bias == MarketBias.UNKNOWN:
 
             self._handle_unknown(
                 context,
                 events,
             )
+
+            #
+            # Bias may have changed inside _handle_unknown().
+            # Continue processing immediately.
+            #
+
+            if structure.bias == MarketBias.BULLISH:
+
+                self._handle_bullish(
+                    context,
+                    events,
+                )
+
+            elif structure.bias == MarketBias.BEARISH:
+
+                self._handle_bearish(
+                    context,
+                    events,
+                )
+
+        #
+        # BULLISH
+        #
 
         elif structure.bias == MarketBias.BULLISH:
 
@@ -71,6 +99,10 @@ class MarketStructureEngine:
                 events,
             )
 
+        #
+        # BEARISH
+        #
+
         elif structure.bias == MarketBias.BEARISH:
 
             self._handle_bearish(
@@ -78,14 +110,20 @@ class MarketStructureEngine:
                 events,
             )
 
+        #
+        # TRANSITION
+        #
+
         elif structure.bias == MarketBias.TRANSITION:
 
             self._handle_transition(
                 context,
                 events,
             )
-        # ---------- Debug ----------
-        structure = context.market_structure
+
+        #
+        # Debug
+        #
 
         print()
         print(context.symbol, context.timeframe)
@@ -93,12 +131,20 @@ class MarketStructureEngine:
         print("Bias:", structure.bias.name)
 
         print("Protected High :", structure.protected_high.price)
-
         print("Protected Low  :", structure.protected_low.price)
 
         print("Structural High:", structure.structural_high.price)
-
         print("Structural Low :", structure.structural_low.price)
+
+        print(
+            "Protected Low Index :",
+            structure.protected_low.swing_index,
+        )
+
+        print(
+            "Structural High Index :",
+            structure.structural_high.swing_index,
+        )
     # ==================================================
     # UNKNOWN
     # ==================================================
@@ -109,6 +155,7 @@ class MarketStructureEngine:
         events: list[StructureEvent],
     ) -> None:
 
+        print("ENTER _handle_unknown")
         structure = context.market_structure
 
         for event in events:
@@ -136,12 +183,13 @@ class MarketStructureEngine:
     # ==================================================
     # BULLISH
     # ==================================================
-
     def _handle_bullish(
         self,
         context: MarketContext,
         events: list[StructureEvent],
     ) -> None:
+
+        print("ENTER _handle_bullish")
 
         structure = context.market_structure
 
@@ -149,10 +197,15 @@ class MarketStructureEngine:
 
             if event.type == StructureEventType.BEARISH_WEAKNESS:
 
+                print("BEARISH WEAKNESS DETECTED")
+
                 structure.bias = MarketBias.TRANSITION
 
                 return
 
+        print("CALLING BOS DETECTOR")
+
+        self._detect_bullish_bos(context)
     # ==================================================
     # BEARISH
     # ==================================================
@@ -321,4 +374,76 @@ class MarketStructureEngine:
                 structure.structural_low.price = swing.price
                 structure.structural_low.swing_index = swing.index
 
-                return            
+                return
+
+    def _detect_bullish_bos(
+        self,
+        context: MarketContext,
+    ) -> None:
+        print("ENTER _detect_bullish_bos")
+        structure = context.market_structure
+
+        level = structure.structural_high
+
+        if level.price is None:
+            return
+
+        if level.swing_index is None:
+            return
+
+        swing = self._get_swing_by_index(
+            context,
+            level.swing_index,
+        )
+
+        if swing is None:
+            return
+
+        if swing.is_broken:
+            return
+
+        if not self._is_bullish_displacement(
+            context,
+        ):
+            return
+
+        current_close = context.df.iloc[-1]["close"]
+        print(
+            "BOS CHECK*-----------***********************---------",
+            "close =", current_close,
+            "level =", level.price,
+        )
+        if current_close <= level.price:
+            return
+
+        swing.is_broken = True
+
+        structure.bos_count += 1
+
+        print(
+            "Bullish BOS",
+            structure.bos_count,
+        )       
+
+
+    def _is_bullish_displacement(
+        self,
+        context: MarketContext,
+    ) -> bool:
+
+        candle = context.df.iloc[-1]
+
+        return candle["close"] > candle["open"]
+
+    def _get_swing_by_index(
+        self,
+        context: MarketContext,
+        swing_index: int,
+    ) -> Swing | None:
+
+        for swing in context.swings:
+
+            if swing.index == swing_index:
+                return swing
+
+        return None     
