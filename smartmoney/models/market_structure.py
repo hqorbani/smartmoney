@@ -12,17 +12,37 @@ class MarketBias(Enum):
 @dataclass(slots=True)
 class MarketStructure:
     """
-    Holds the current structural state of the market.
+    Represents the current market structure state.
 
-    This object is intentionally passive.
-    It contains no business logic.
+    This model is intentionally passive and contains
+    no business logic.
 
-    MarketStructureEngine will be responsible for
-    updating this object.
+    All state transitions are handled by
+    MarketStructureEngine.
     """
 
+    # --------------------------------------------------
+    # Current market bias
+    # --------------------------------------------------
+
     bias: MarketBias = MarketBias.UNKNOWN
+
+    # --------------------------------------------------
+    # Statistics
+    # --------------------------------------------------
 
     bos_count: int = 0
 
     choch_count: int = 0
+
+    # --------------------------------------------------
+    # ICT Protected Levels
+    # --------------------------------------------------
+
+    protected_high: float | None = None
+
+    protected_low: float | None = None
+
+    protected_high_swing_index: int | None = None
+
+    protected_low_swing_index: int | None = None

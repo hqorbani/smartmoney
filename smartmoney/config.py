@@ -10,16 +10,26 @@ class Config:
     # MT5
     # ----------------------------
 
-    HISTORY_BARS = 100
+    HISTORY_BARS = 400
 
     SCAN_INTERVAL = 3
 
     SYMBOLS = [
-        "NAS100",
+        "EURUSD",
     ]
+    #----------
+    #-SYMBOLS = [
+    #-    "NAS100": 1,
+    #-    "XAUUSD": 0.5,
+    #-    "BITCOIN": 0.5,
+    #-    "EURUSD": 0.0001,
+    #-    "NZDCAD": 0.0001,
+    #-    "AUDUSD": 0.0001,
+    #-    "GBPUSD": 0.0001,
+    #-]
 
     TIMEFRAMES = [
-        mt5.TIMEFRAME_M1,
+        mt5.TIMEFRAME_M5,
     ]
 
     # ----------------------------
@@ -33,7 +43,7 @@ class Config:
     # FVG
     # ----------------------------
 
-    MIN_FVG_SIZE = 0.1
+    MIN_FVG_SIZE = 0.0002
 
     # ----------------------------
     # Query
@@ -43,7 +53,7 @@ class Config:
 
     SORT_DESCENDING = False
 
-    TOP_SIGNALS = 10
+    TOP_SIGNALS = 40
 
     MINIMUM_SCORE = 0.0
 
@@ -51,8 +61,12 @@ class Config:
     # Debug
     # ----------------------------
 
-    PRINT_SWINGS = False
+    PRINT_SWINGS = True
 
     PRINT_FVGS = False
 
     PRINT_ORDERBLOCKS = False
+
+
+    STRUCTURE_BREAK_MODE = "close"
+    #-- close|wick

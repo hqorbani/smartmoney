@@ -9,7 +9,7 @@ from smartmoney.models.swing_relation import (
     SwingRelation,
     SwingRelationType,
 )
-
+from smartmoney.config import Config
 
 class StructureEventEngine:
 
@@ -121,7 +121,6 @@ class StructureEventEngine:
         )
 
     # ---------------------------------------------------------
-
     def _match_pattern(
         self,
         relations: list[SwingRelation],

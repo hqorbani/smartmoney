@@ -58,7 +58,7 @@ class SwingAnalyzer(Analyzer):
                 )
         if Config.PRINT_SWINGS:
 
-            print()
+            print('----*****--------')
             print(f"{context.symbol} {context.timeframe}")
             print(f"Swings : {len(context.swings)}")
 
