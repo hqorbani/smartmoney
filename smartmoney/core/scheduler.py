@@ -124,6 +124,13 @@ class Scheduler:
                     context,
                 )
 
+                print()
+                print("Structure Events")
+
+                for event in events:
+
+                    print(event.type.name)
+
                 self.market_structure_engine.update(
                     context,
                     events,

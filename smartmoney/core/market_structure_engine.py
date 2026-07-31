@@ -9,22 +9,45 @@ from smartmoney.models.structure_event import (
     StructureEventType,
 )
 
+from smartmoney.models.swing_relation import (
+    SwingRelationType,
+)
+
 
 class MarketStructureEngine:
     """
-    Maintains market structure state.
+    Maintains ICT market structure state.
 
-    Responsibilities:
+    Responsibilities
 
     - Market Bias
-    - Protected Levels (future)
+    - Protected Levels
     - BOS (future)
     - CHOCH (future)
 
-    This engine acts as a state machine.
+    This engine is the single owner of
+    MarketStructure state.
     """
 
     # --------------------------------------------------
+    # Initial ICT patterns
+    # --------------------------------------------------
+
+    _INITIAL_BULLISH_PATTERN = (
+        SwingRelationType.HIGHER_HIGH,
+        SwingRelationType.HIGHER_LOW,
+        SwingRelationType.HIGHER_HIGH,
+    )
+
+    _INITIAL_BEARISH_PATTERN = (
+        SwingRelationType.LOWER_LOW,
+        SwingRelationType.LOWER_HIGH,
+        SwingRelationType.LOWER_LOW,
+    )
+
+    # ==================================================
+    # Public
+    # ==================================================
 
     def update(
         self,
@@ -55,6 +78,23 @@ class MarketStructureEngine:
                 events,
             )
 
+        elif structure.bias == MarketBias.TRANSITION:
+
+            self._handle_transition(
+                context,
+                events,
+            )
+        # ---------- Debug ----------
+        print()
+        print(
+            context.symbol,
+            context.timeframe,
+        )
+        print(
+            structure.bias.name,
+            structure.protected_high,
+            structure.protected_low,
+        )
     # ==================================================
     # UNKNOWN
     # ==================================================
@@ -69,11 +109,7 @@ class MarketStructureEngine:
 
         for event in events:
 
-            if (
-                event.type
-                ==
-                StructureEventType.BULLISH_CONFIRMED
-            ):
+            if event.type == StructureEventType.BULLISH_CONFIRMED:
 
                 structure.bias = MarketBias.BULLISH
 
@@ -83,11 +119,7 @@ class MarketStructureEngine:
 
                 return
 
-            if (
-                event.type
-                ==
-                StructureEventType.BEARISH_CONFIRMED
-            ):
+            if event.type == StructureEventType.BEARISH_CONFIRMED:
 
                 structure.bias = MarketBias.BEARISH
 
@@ -111,11 +143,7 @@ class MarketStructureEngine:
 
         for event in events:
 
-            if (
-                event.type
-                ==
-                StructureEventType.BEARISH_WEAKNESS
-            ):
+            if event.type == StructureEventType.BEARISH_WEAKNESS:
 
                 structure.bias = MarketBias.TRANSITION
 
@@ -135,15 +163,30 @@ class MarketStructureEngine:
 
         for event in events:
 
-            if (
-                event.type
-                ==
-                StructureEventType.BULLISH_WEAKNESS
-            ):
+            if event.type == StructureEventType.BULLISH_WEAKNESS:
 
                 structure.bias = MarketBias.TRANSITION
 
                 return
+
+    # ==================================================
+    # TRANSITION
+    # ==================================================
+
+    def _handle_transition(
+        self,
+        context: MarketContext,
+        events: list[StructureEvent],
+    ) -> None:
+
+        """
+        Future
+
+        - CHOCH
+        - MSS
+        """
+
+        pass
 
     # ==================================================
     # Initialization
@@ -154,12 +197,9 @@ class MarketStructureEngine:
         context: MarketContext,
     ) -> None:
 
-        """
-        Future:
-        Set protected low.
-        """
-
-        pass
+        self._find_initial_protected_low(
+            context,
+        )
 
     # --------------------------------------------------
 
@@ -168,9 +208,67 @@ class MarketStructureEngine:
         context: MarketContext,
     ) -> None:
 
-        """
-        Future:
-        Set protected high.
-        """
+        self._find_initial_protected_high(
+            context,
+        )
 
-        pass
+    # ==================================================
+    # Protected Levels
+    # ==================================================
+
+    def _find_initial_protected_low(
+        self,
+        context: MarketContext,
+    ) -> None:
+
+        relations = context.swing_relations
+
+        structure = context.market_structure
+
+        for i in range(len(relations) - 3, -1, -1):
+
+            pattern = (
+                relations[i].relation,
+                relations[i + 1].relation,
+                relations[i + 2].relation,
+            )
+
+            if pattern == self._INITIAL_BULLISH_PATTERN:
+
+                swing = relations[i + 1].current
+
+                structure.protected_low = swing.price
+
+                structure.protected_low_swing_index = swing.index
+
+                return
+
+    # --------------------------------------------------
+
+    def _find_initial_protected_high(
+        self,
+        context: MarketContext,
+    ) -> None:
+
+        relations = context.swing_relations
+
+        structure = context.market_structure
+
+        for i in range(len(relations) - 3, -1, -1):
+
+            pattern = (
+                relations[i].relation,
+                relations[i + 1].relation,
+                relations[i + 2].relation,
+            )
+
+            if pattern == self._INITIAL_BEARISH_PATTERN:
+
+                swing = relations[i + 1].current
+
+                structure.protected_high = swing.price
+
+                structure.protected_high_swing_index = swing.index
+
+                return
+

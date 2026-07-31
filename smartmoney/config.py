@@ -15,7 +15,7 @@ class Config:
     SCAN_INTERVAL = 3
 
     SYMBOLS = [
-        "EURUSD",
+        "XAUUSD",
     ]
     #----------
     #-SYMBOLS = [
@@ -43,7 +43,7 @@ class Config:
     # FVG
     # ----------------------------
 
-    MIN_FVG_SIZE = 0.0002
+    MIN_FVG_SIZE = 0.5
 
     # ----------------------------
     # Query

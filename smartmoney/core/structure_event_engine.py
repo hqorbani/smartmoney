@@ -63,13 +63,16 @@ class StructureEventEngine:
         relations: list[SwingRelation],
     ) -> bool:
 
-        return self._match_pattern(
-            relations,
-            [
-                SwingRelationType.HIGHER_HIGH,
-                SwingRelationType.HIGHER_LOW,
-                SwingRelationType.HIGHER_HIGH,
-            ],
+        return (
+            self._find_pattern(
+                relations,
+                (
+                    SwingRelationType.HIGHER_HIGH,
+                    SwingRelationType.HIGHER_LOW,
+                    SwingRelationType.HIGHER_HIGH,
+                ),
+            )
+            is not None
         )
 
     # ---------------------------------------------------------
@@ -79,13 +82,16 @@ class StructureEventEngine:
         relations: list[SwingRelation],
     ) -> bool:
 
-        return self._match_pattern(
-            relations,
-            [
-                SwingRelationType.LOWER_LOW,
-                SwingRelationType.LOWER_HIGH,
-                SwingRelationType.LOWER_LOW,
-            ],
+        return (
+            self._find_pattern(
+                relations,
+                (
+                    SwingRelationType.HIGHER_HIGH,
+                    SwingRelationType.HIGHER_LOW,
+                    SwingRelationType.HIGHER_HIGH,
+                ),
+            )
+            is not None
         )
 
     # ---------------------------------------------------------
@@ -95,13 +101,16 @@ class StructureEventEngine:
         relations: list[SwingRelation],
     ) -> bool:
 
-        return self._match_pattern(
-            relations,
-            [
-                SwingRelationType.HIGHER_HIGH,
-                SwingRelationType.HIGHER_LOW,
-                SwingRelationType.LOWER_HIGH,
-            ],
+        return (
+            self._find_pattern(
+                relations,
+                (
+                    SwingRelationType.HIGHER_HIGH,
+                    SwingRelationType.HIGHER_LOW,
+                    SwingRelationType.HIGHER_HIGH,
+                ),
+            )
+            is not None
         )
 
     # ---------------------------------------------------------
@@ -111,29 +120,50 @@ class StructureEventEngine:
         relations: list[SwingRelation],
     ) -> bool:
 
-        return self._match_pattern(
-            relations,
-            [
-                SwingRelationType.LOWER_LOW,
-                SwingRelationType.LOWER_HIGH,
-                SwingRelationType.HIGHER_LOW,
-            ],
+        return (
+            self._find_pattern(
+                relations,
+                (
+                    SwingRelationType.HIGHER_HIGH,
+                    SwingRelationType.HIGHER_LOW,
+                    SwingRelationType.HIGHER_HIGH,
+                ),
+            )
+            is not None
         )
 
     # ---------------------------------------------------------
-    def _match_pattern(
+    def _find_pattern(
         self,
         relations: list[SwingRelation],
-        pattern: list[SwingRelationType],
-    ) -> bool:
+        pattern: tuple[SwingRelationType, ...],
+    ) -> SwingRelation | None:
 
-        if len(relations) < len(pattern):
+        length = len(pattern)
 
-            return False
+        if len(relations) < length:
+            return None
 
-        recent = [
-            relation.relation
-            for relation in relations[-len(pattern):]
-        ]
+        for i in range(
+            len(relations) - length,
+            -1,
+            -1,
+        ):
 
-        return recent == pattern
+            current = tuple(
+                relation.relation
+                for relation in relations[i:i + length]
+            )
+
+            if current == pattern:
+
+                #
+                # Return the middle relation.
+                #
+                # HH HL HH -> HL
+                # LL LH LL -> LH
+                #
+
+                return relations[i + 1]
+
+        return None
