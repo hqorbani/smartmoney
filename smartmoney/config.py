@@ -10,7 +10,7 @@ class Config:
     # MT5
     # ----------------------------
 
-    HISTORY_BARS = 500
+    HISTORY_BARS = 700
 
     SCAN_INTERVAL = 3
 
@@ -30,6 +30,10 @@ class Config:
 
     TIMEFRAMES = [
         mt5.TIMEFRAME_M1,
+        mt5.TIMEFRAME_M3,
+        mt5.TIMEFRAME_M5,
+        mt5.TIMEFRAME_M15,
+        mt5.TIMEFRAME_H1
     ]
 
     # ----------------------------
@@ -43,8 +47,7 @@ class Config:
     # FVG
     # ----------------------------
 
-    MIN_FVG_SIZE = 0.5
-
+    MIN_FVG_SIZE = 1
     # ----------------------------
     # Query
     # ----------------------------
