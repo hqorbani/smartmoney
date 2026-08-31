@@ -14,8 +14,9 @@ class FVGLifecycleAnalyzer(Analyzer):
         times = df["time"]
 
         for fvg in context.fvgs:
-
-            for i in range(fvg.end_index + 1, len(df)):
+            for i in range(len(df)):
+                if times.iloc[i] <= fvg.end_time:
+                    continue
 
                 if fvg.bullish:
 
