@@ -9,7 +9,7 @@ from smartmoney.models.orderblock import OrderBlock
 from smartmoney.models.market_structure import MarketStructure
 from smartmoney.models.swing_relation import SwingRelation
 from smartmoney.models.signal import Signal
-
+from smartmoney.models.entry import EntryPlan
 
 @dataclass
 class MarketContext:
@@ -33,7 +33,7 @@ class MarketContext:
     signal: Signal = field(
         default_factory=Signal
     )
-
+    entry_plan: EntryPlan | None = None
     market_structure: MarketStructure = field(
         default_factory=MarketStructure
     )
