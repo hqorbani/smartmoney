@@ -71,7 +71,7 @@ class OrderBlockAnalyzer(Analyzer):
 
                         if i not in used_indexes:
                             if any(
-                                ob.index == i and ob.bullish is True
+                                ob.index == i and ob.bullish is False
                                 for ob in context.orderblocks
                             ):
                                 break
