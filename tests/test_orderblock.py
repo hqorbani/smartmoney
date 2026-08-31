@@ -102,3 +102,146 @@ def test_bearish_orderblock_is_detected():
     assert ob.close == 102
     assert ob.related_fvg is context.fvgs[0]
     assert ob.mitigated is False
+
+def test_orderblock_is_preserved_across_analysis_cycles():
+    context = make_context([
+        {
+            "time": "2026-01-01 10:00",
+            "open": 101,
+            "high": 103,
+            "low": 98,
+            "close": 99,
+        },
+        {
+            "time": "2026-01-01 10:15",
+            "open": 99,
+            "high": 108,
+            "low": 99,
+            "close": 107,
+        },
+        {
+            "time": "2026-01-01 10:30",
+            "open": 107,
+            "high": 112,
+            "low": 105,
+            "close": 110,
+        },
+    ])
+
+    FVGAnalyzer().analyze(context)
+    OrderBlockAnalyzer().analyze(context)
+
+    assert len(context.orderblocks) == 1
+
+    ob_before = context.orderblocks[0]
+
+    context.df = pd.DataFrame([
+        {
+            "time": "2026-01-01 10:00",
+            "open": 101,
+            "high": 103,
+            "low": 98,
+            "close": 99,
+        },
+        {
+            "time": "2026-01-01 10:15",
+            "open": 99,
+            "high": 108,
+            "low": 99,
+            "close": 107,
+        },
+        {
+            "time": "2026-01-01 10:30",
+            "open": 107,
+            "high": 112,
+            "low": 105,
+            "close": 110,
+        },
+        {
+            "time": "2026-01-01 10:45",
+            "open": 110,
+            "high": 115,
+            "low": 108,
+            "close": 113,
+        },
+    ])
+
+    context.df["time"] = pd.to_datetime(context.df["time"])
+
+    FVGAnalyzer().analyze(context)
+    OrderBlockAnalyzer().analyze(context)
+
+    assert len(context.orderblocks) == 1
+    assert context.orderblocks[0] is ob_before  
+
+def test_orderblock_state_is_preserved_across_analysis_cycles():
+    context = make_context([
+        {
+            "time": "2026-01-01 10:00",
+            "open": 101,
+            "high": 103,
+            "low": 98,
+            "close": 99,
+        },
+        {
+            "time": "2026-01-01 10:15",
+            "open": 99,
+            "high": 108,
+            "low": 99,
+            "close": 107,
+        },
+        {
+            "time": "2026-01-01 10:30",
+            "open": 107,
+            "high": 112,
+            "low": 105,
+            "close": 110,
+        },
+    ])
+
+    FVGAnalyzer().analyze(context)
+    OrderBlockAnalyzer().analyze(context)
+
+    ob_before = context.orderblocks[0]
+
+    ob_before.mitigated = True
+
+    context.df = pd.DataFrame([
+        {
+            "time": "2026-01-01 10:00",
+            "open": 101,
+            "high": 103,
+            "low": 98,
+            "close": 99,
+        },
+        {
+            "time": "2026-01-01 10:15",
+            "open": 99,
+            "high": 108,
+            "low": 99,
+            "close": 107,
+        },
+        {
+            "time": "2026-01-01 10:30",
+            "open": 107,
+            "high": 112,
+            "low": 105,
+            "close": 110,
+        },
+        {
+            "time": "2026-01-01 10:45",
+            "open": 110,
+            "high": 115,
+            "low": 108,
+            "close": 113,
+        },
+    ])
+
+    context.df["time"] = pd.to_datetime(context.df["time"])
+
+    FVGAnalyzer().analyze(context)
+    OrderBlockAnalyzer().analyze(context)
+
+    assert len(context.orderblocks) == 1
+    assert context.orderblocks[0] is ob_before
+    assert context.orderblocks[0].mitigated is True      

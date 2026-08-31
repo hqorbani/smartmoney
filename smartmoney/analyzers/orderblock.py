@@ -8,8 +8,6 @@ class OrderBlockAnalyzer(Analyzer):
 
     def analyze(self, context):
 
-        context.orderblocks.clear()
-
         df = context.df
 
         opens = df["open"].to_numpy()
@@ -34,7 +32,11 @@ class OrderBlockAnalyzer(Analyzer):
                     if closes[i] < opens[i]:
 
                         if i not in used_indexes:
-
+                            if any(
+                                ob.index == i and ob.bullish is True
+                                for ob in context.orderblocks
+                            ):
+                                break
                             context.orderblocks.append(
 
                                 OrderBlock(
@@ -68,7 +70,11 @@ class OrderBlockAnalyzer(Analyzer):
                     if closes[i] > opens[i]:
 
                         if i not in used_indexes:
-
+                            if any(
+                                ob.index == i and ob.bullish is True
+                                for ob in context.orderblocks
+                            ):
+                                break
                             context.orderblocks.append(
 
                                 OrderBlock(
