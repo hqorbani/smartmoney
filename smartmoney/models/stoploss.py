@@ -9,3 +9,5 @@ class StopLossPlan:
     stop_loss: float
 
     entry_plan: EntryPlan
+
+    

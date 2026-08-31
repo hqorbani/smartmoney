@@ -16,15 +16,22 @@ class StopLossAnalyzer(Analyzer):
         if entry_plan is None:
             return
 
+        entry_price = float(entry_plan.entry_price)
         orderblock = entry_plan.orderblock
 
         if context.signal.direction == SignalDirection.BUY:
 
             stop_loss = float(orderblock.low)
 
+            if stop_loss >= entry_price:
+                return
+
         elif context.signal.direction == SignalDirection.SELL:
 
             stop_loss = float(orderblock.high)
+
+            if stop_loss <= entry_price:
+                return
 
         else:
             return

@@ -7,7 +7,7 @@ from smartmoney.analyzers.signal import SignalAnalyzer
 from smartmoney.analyzers.stoploss import StopLossAnalyzer
 from smartmoney.core.context import MarketContext
 from smartmoney.models.signal import SignalDirection
-
+from smartmoney.models.entry import EntryPlan
 
 def make_context(rows):
     df = pd.DataFrame(rows)
@@ -141,6 +141,93 @@ def test_no_stop_loss_without_entry_plan():
             "close": 100,
         },
     ])
+
+    StopLossAnalyzer().analyze(context)
+
+    assert context.stop_loss_plan is None
+
+def test_no_stop_loss_when_bullish_stop_is_not_below_entry():
+
+    context = make_context([
+        {
+            "time": "2026-01-01 10:00",
+            "open": 101,
+            "high": 103,
+            "low": 98,
+            "close": 99,
+        },
+        {
+            "time": "2026-01-01 10:15",
+            "open": 99,
+            "high": 108,
+            "low": 99,
+            "close": 107,
+        },
+        {
+            "time": "2026-01-01 10:30",
+            "open": 107,
+            "high": 112,
+            "low": 105,
+            "close": 110,
+        },
+    ])
+
+    FVGAnalyzer().analyze(context)
+    OrderBlockAnalyzer().analyze(context)
+    SignalAnalyzer().analyze(context)
+
+    assert context.signal.direction == SignalDirection.BUY
+    assert len(context.orderblocks) == 1
+
+    context.entry_plan = EntryPlan(
+        entry_price=97,
+        orderblock=context.orderblocks[0],
+        fvg=context.fvgs[0],
+    )
+
+    StopLossAnalyzer().analyze(context)
+
+    assert context.stop_loss_plan is None
+
+
+def test_no_stop_loss_when_bearish_stop_is_not_above_entry():
+
+    context = make_context([
+        {
+            "time": "2026-01-01 10:00",
+            "open": 99,
+            "high": 103,
+            "low": 98,
+            "close": 102,
+        },
+        {
+            "time": "2026-01-01 10:15",
+            "open": 102,
+            "high": 102,
+            "low": 93,
+            "close": 94,
+        },
+        {
+            "time": "2026-01-01 10:30",
+            "open": 94,
+            "high": 96,
+            "low": 90,
+            "close": 91,
+        },
+    ])
+
+    FVGAnalyzer().analyze(context)
+    OrderBlockAnalyzer().analyze(context)
+    SignalAnalyzer().analyze(context)
+
+    assert context.signal.direction == SignalDirection.SELL
+    assert len(context.orderblocks) == 1
+
+    context.entry_plan = EntryPlan(
+        entry_price=104,
+        orderblock=context.orderblocks[0],
+        fvg=context.fvgs[0],
+    )
 
     StopLossAnalyzer().analyze(context)
 
