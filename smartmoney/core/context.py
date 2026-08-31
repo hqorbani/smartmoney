@@ -11,6 +11,7 @@ from smartmoney.models.swing_relation import SwingRelation
 from smartmoney.models.signal import Signal
 from smartmoney.models.entry import EntryPlan
 from smartmoney.models.stoploss import StopLossPlan
+from smartmoney.models.takeprofit import TakeProfitPlan
 
 @dataclass
 class MarketContext:
@@ -36,6 +37,7 @@ class MarketContext:
     )
     entry_plan: EntryPlan | None = None
     stop_loss_plan: StopLossPlan | None = None
+    take_profit_plan: TakeProfitPlan | None = None
     market_structure: MarketStructure = field(
         default_factory=MarketStructure
     )
