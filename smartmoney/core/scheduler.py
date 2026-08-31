@@ -105,8 +105,11 @@ class Scheduler:
                 df = self.provider.fetch_rates(
                     symbol=symbol,
                     timeframe=timeframe,
-                    count=self.candle_count,
+                    count=self.candle_count + 1,
                 )
+
+                df = df.iloc[:-1].copy()
+                
 
                 context = self.context_manager.update(
                     symbol=symbol,
