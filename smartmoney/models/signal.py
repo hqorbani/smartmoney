@@ -1,73 +1,22 @@
-from dataclasses import dataclass, field
-from datetime import datetime
-from uuid import uuid4
+from dataclasses import dataclass
+from enum import Enum
+
+from smartmoney.models.fvg import FVG
+from smartmoney.models.orderblock import OrderBlock
 
 
-@dataclass(slots=True)
+class SignalDirection(str, Enum):
+    BUY = "buy"
+    SELL = "sell"
+    NO_SIGNAL = "no_signal"
+
+
+@dataclass
 class Signal:
+    direction: SignalDirection = SignalDirection.NO_SIGNAL
 
-    # ---------------------------------
-    # Identity
-    # ---------------------------------
+    reason: str | None = None
 
-    id: str = field(
-        default_factory=lambda: str(uuid4())
-    )
+    orderblock: OrderBlock | None = None
 
-    # ---------------------------------
-    # Market
-    # ---------------------------------
-
-    symbol: str = ""
-
-    timeframe: int = 0
-
-    strategy: str = ""
-
-    direction: str = ""
-
-    # ---------------------------------
-    # Zone
-    # ---------------------------------
-
-    price_low: float = 0.0
-
-    price_high: float = 0.0
-
-    # ---------------------------------
-    # Times
-    # ---------------------------------
-
-    time: datetime = field(
-        default_factory=datetime.utcnow
-    )
-
-    created_at: datetime = field(
-        default_factory=datetime.utcnow
-    )
-
-    updated_at: datetime = field(
-        default_factory=datetime.utcnow
-    )
-
-    # ---------------------------------
-    # Live Market
-    # ---------------------------------
-
-    current_price: float = 0.0
-
-    distance: float = 0.0
-
-    # ---------------------------------
-    # Ranking
-    # ---------------------------------
-
-    score: float = 0.0
-
-    rank: int = 0
-
-    # ---------------------------------
-    # Status
-    # ---------------------------------
-
-    status: str = "ACTIVE"
+    fvg: FVG | None = None
