@@ -123,3 +123,34 @@ def test_fvg_state_is_preserved_across_analysis_cycles():
     assert len(context.fvgs) == 1
     assert context.fvgs[0] is fvg_before
     assert context.fvgs[0].status == FVGStatus.MITIGATED
+
+def test_fvg_state_is_preserved_when_new_candle_arrives():
+    context = make_context([
+        {"time": "2026-01-01 10:00", "high": 100, "low": 98},
+        {"time": "2026-01-01 10:15", "high": 105, "low": 99},
+        {"time": "2026-01-01 10:30", "high": 108, "low": 102},
+        {"time": "2026-01-01 10:45", "high": 106, "low": 101},
+    ])
+
+    FVGAnalyzer().analyze(context)
+    FVGLifecycleAnalyzer().analyze(context)
+
+    fvg_before = context.fvgs[0]
+
+    assert fvg_before.status == FVGStatus.MITIGATED
+
+    context.df = pd.DataFrame([
+        {"time": "2026-01-01 10:00", "high": 100, "low": 98},
+        {"time": "2026-01-01 10:15", "high": 105, "low": 99},
+        {"time": "2026-01-01 10:30", "high": 108, "low": 102},
+        {"time": "2026-01-01 10:45", "high": 106, "low": 101},
+        {"time": "2026-01-01 11:00", "high": 109, "low": 105},
+    ])
+
+    context.df["time"] = pd.to_datetime(context.df["time"])
+
+    FVGAnalyzer().analyze(context)
+    FVGLifecycleAnalyzer().analyze(context)
+
+    assert context.fvgs[0] is fvg_before
+    assert context.fvgs[0].status == FVGStatus.MITIGATED
