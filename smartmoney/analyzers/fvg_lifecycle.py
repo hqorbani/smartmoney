@@ -14,6 +14,8 @@ class FVGLifecycleAnalyzer(Analyzer):
         times = df["time"]
 
         for fvg in context.fvgs:
+            if fvg.status == FVGStatus.FILLED:
+                continue
             for i in range(len(df)):
                 if times.iloc[i] <= fvg.end_time:
                     continue
