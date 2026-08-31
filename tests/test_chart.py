@@ -1,4 +1,4 @@
-from smartmoney import config
+from smartmoney.config import Config
 
 from smartmoney.analyzers.swing import SwingAnalyzer
 from smartmoney.core.context import MarketContext
@@ -6,32 +6,29 @@ from smartmoney.core.mt5 import MT5DataProvider
 from smartmoney.visualization.chart import ChartVisualizer
 
 
-provider = MT5DataProvider()
+def test_chart():
+    provider = MT5DataProvider()
 
-provider.connect()
+    provider.connect()
 
-df = provider.fetch_rates(
+    try:
+        timeframe = Config.TIMEFRAMES[0]
 
-    "EURUSD",
+        df = provider.fetch_rates(
+            "EURUSD",
+            timeframe,
+            Config.HISTORY_BARS,
+        )
 
-    config.TIMEFRAMES[0],
+        context = MarketContext(
+            symbol="EURUSD",
+            timeframe=timeframe,
+            df=df,
+        )
 
-    config.CANDLE_COUNT,
+        SwingAnalyzer().analyze(context)
 
-)
+        ChartVisualizer().show(context)
 
-context = MarketContext(
-
-    symbol="EURUSD",
-
-    timeframe=config.TIMEFRAMES[0],
-
-    df=df,
-
-)
-
-SwingAnalyzer().analyze(context)
-
-ChartVisualizer().show(context)
-
-provider.shutdown()
+    finally:
+        provider.shutdown()

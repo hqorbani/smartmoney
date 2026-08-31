@@ -2,12 +2,11 @@ from smartmoney.analyzers.base import Analyzer
 from smartmoney.models.orderblock import OrderBlock
 from smartmoney.config import Config
 
-class OrderBlockAnalyzer(Analyzer):
 
+class OrderBlockAnalyzer(Analyzer):
     priority = 30
 
     def analyze(self, context):
-
         df = context.df
 
         opens = df["open"].to_numpy()
@@ -16,7 +15,7 @@ class OrderBlockAnalyzer(Analyzer):
         closes = df["close"].to_numpy()
         times = df["time"]
 
-        # جلوگیری از OrderBlock تکراری
+        # جلوگیری از ایجاد OrderBlock تکراری
         used_indexes = set()
 
         for fvg in context.fvgs:
@@ -32,30 +31,26 @@ class OrderBlockAnalyzer(Analyzer):
                     if closes[i] < opens[i]:
 
                         if i not in used_indexes:
+
+                            # اگر این Bullish OB قبلاً ساخته شده،
+                            # همان OB را حفظ می‌کنیم.
                             if any(
                                 ob.index == i and ob.bullish is True
                                 for ob in context.orderblocks
                             ):
                                 break
+
                             context.orderblocks.append(
-
                                 OrderBlock(
-
                                     index=i,
-
                                     time=times.iloc[i],
-
                                     open=opens[i],
                                     high=highs[i],
                                     low=lows[i],
                                     close=closes[i],
-
                                     bullish=True,
-
                                     related_fvg=fvg,
-
                                 )
-
                             )
 
                             used_indexes.add(i)
@@ -70,44 +65,85 @@ class OrderBlockAnalyzer(Analyzer):
                     if closes[i] > opens[i]:
 
                         if i not in used_indexes:
+
+                            # اگر این Bearish OB قبلاً ساخته شده،
+                            # همان OB را حفظ می‌کنیم.
                             if any(
                                 ob.index == i and ob.bullish is False
                                 for ob in context.orderblocks
                             ):
                                 break
+
                             context.orderblocks.append(
-
                                 OrderBlock(
-
                                     index=i,
-
                                     time=times.iloc[i],
-
                                     open=opens[i],
                                     high=highs[i],
                                     low=lows[i],
                                     close=closes[i],
-
                                     bullish=False,
-
                                     related_fvg=fvg,
-
                                 )
-
                             )
 
                             used_indexes.add(i)
 
                         break
 
-        # if Config.PRINT_ORDERBLOCKS:
+        # ---------------------------------------------------------
+        # OrderBlock Mitigation
+        # ---------------------------------------------------------
+        #
+        # Bullish OB:
+        # اگر Low یک کندل بعد از OB وارد محدوده OB شود،
+        # OB می‌شود mitigated.
+        #
+        # Bearish OB:
+        # اگر High یک کندل بعد از OB وارد محدوده OB شود،
+        # OB می‌شود mitigated.
+        #
+        # نکته:
+        # candle خود OB بررسی نمی‌شود.
+        # بررسی از candle بعد از OB شروع می‌شود.
+        #
+        # همچنین اگر OB قبلاً mitigated شده باشد، state آن
+        # حفظ می‌شود و دوباره محاسبه نمی‌شود.
 
+        for ob in context.orderblocks:
+
+            if ob.mitigated:
+                continue
+
+            # Mitigation فقط بعد از تشکیل FVG مربوط به OB
+            start_index = ob.related_fvg.end_index + 1
+
+            for i in range(start_index, len(df)):
+
+                candle_low = lows[i]
+                candle_high = highs[i]
+
+                if ob.bullish:
+
+                    # قیمت وارد محدوده Bullish OB شده است
+                    if candle_low <= ob.high:
+                        ob.mitigated = True
+                        break
+
+                else:
+
+                    # قیمت وارد محدوده Bearish OB شده است
+                    if candle_high >= ob.low:
+                        ob.mitigated = True
+                        break
+
+        # if Config.PRINT_ORDERBLOCKS:
+        #
         #     print()
         #     print(f"{context.symbol} {context.timeframe}")
         #     print(f"OrderBlocks : {len(context.orderblocks)}")
-
+        #
         #     for ob in context.orderblocks[-10:]:
-
         #         print(
         #             f"{'BULL' if ob.bullish else 'BEAR'} | "
         #             f"{ob.time} | "

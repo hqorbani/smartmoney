@@ -244,4 +244,96 @@ def test_orderblock_state_is_preserved_across_analysis_cycles():
 
     assert len(context.orderblocks) == 1
     assert context.orderblocks[0] is ob_before
-    assert context.orderblocks[0].mitigated is True      
+    assert context.orderblocks[0].mitigated is True  
+
+def test_bullish_orderblock_is_mitigated_when_price_enters_zone():
+    context = make_context([
+        # Bullish OB candle
+        {
+            "time": "2026-01-01 10:00",
+            "open": 101,
+            "high": 103,
+            "low": 98,
+            "close": 99,
+        },
+        # Impulse candle
+        {
+            "time": "2026-01-01 10:15",
+            "open": 99,
+            "high": 108,
+            "low": 99,
+            "close": 107,
+        },
+        # FVG candle
+        {
+            "time": "2026-01-01 10:30",
+            "open": 107,
+            "high": 112,
+            "low": 105,
+            "close": 110,
+        },
+        # Price returns into OB zone
+        {
+            "time": "2026-01-01 10:45",
+            "open": 110,
+            "high": 111,
+            "low": 102,
+            "close": 105,
+        },
+    ])
+
+    FVGAnalyzer().analyze(context)
+    OrderBlockAnalyzer().analyze(context)
+
+    assert len(context.orderblocks) == 1
+
+    ob = context.orderblocks[0]
+
+    assert ob.bullish is True
+    assert ob.mitigated is True        
+
+def test_bearish_orderblock_is_mitigated_when_price_enters_zone():
+    context = make_context([
+        # Bearish OB candle
+        {
+            "time": "2026-01-01 10:00",
+            "open": 99,
+            "high": 103,
+            "low": 98,
+            "close": 102,
+        },
+        # Impulse candle
+        {
+            "time": "2026-01-01 10:15",
+            "open": 102,
+            "high": 102,
+            "low": 93,
+            "close": 94,
+        },
+        # FVG candle
+        {
+            "time": "2026-01-01 10:30",
+            "open": 94,
+            "high": 96,
+            "low": 90,
+            "close": 91,
+        },
+        # Price returns into OB zone
+        {
+            "time": "2026-01-01 10:45",
+            "open": 91,
+            "high": 100,
+            "low": 89,
+            "close": 98,
+        },
+    ])
+
+    FVGAnalyzer().analyze(context)
+    OrderBlockAnalyzer().analyze(context)
+
+    assert len(context.orderblocks) == 1
+
+    ob = context.orderblocks[0]
+
+    assert ob.bullish is False
+    assert ob.mitigated is True    
