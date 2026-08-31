@@ -185,3 +185,26 @@ def test_mitigated_fvg_becomes_filled_when_new_candle_fills_gap():
 
     assert context.fvgs[0] is fvg_before
     assert context.fvgs[0].status == FVGStatus.FILLED
+
+def test_filled_fvg_remains_filled_across_analysis_cycles():
+    context = make_context([
+        {"time": "2026-01-01 10:00", "high": 100, "low": 98},
+        {"time": "2026-01-01 10:15", "high": 105, "low": 99},
+        {"time": "2026-01-01 10:30", "high": 108, "low": 102},
+        {"time": "2026-01-01 10:45", "high": 106, "low": 101},
+        {"time": "2026-01-01 11:00", "high": 104, "low": 99},
+    ])
+
+    FVGAnalyzer().analyze(context)
+    FVGLifecycleAnalyzer().analyze(context)
+
+    fvg = context.fvgs[0]
+
+    assert fvg.status == FVGStatus.FILLED
+
+    FVGAnalyzer().analyze(context)
+    FVGLifecycleAnalyzer().analyze(context)
+
+    assert len(context.fvgs) == 1
+    assert context.fvgs[0] is fvg
+    assert context.fvgs[0].status == FVGStatus.FILLED    
