@@ -207,4 +207,50 @@ def test_filled_fvg_remains_filled_across_analysis_cycles():
 
     assert len(context.fvgs) == 1
     assert context.fvgs[0] is fvg
-    assert context.fvgs[0].status == FVGStatus.FILLED    
+    assert context.fvgs[0].status == FVGStatus.FILLED
+
+def test_bullish_fvg_becomes_mitigated_when_price_enters_zone():
+    context = make_context([
+        {"time": "2026-01-01 10:00", "high": 100, "low": 98},
+        {"time": "2026-01-01 10:15", "high": 105, "low": 99},
+        {"time": "2026-01-01 10:30", "high": 108, "low": 102},
+        # Price enters the FVG zone.
+        {"time": "2026-01-01 10:45", "high": 109, "low": 99},
+    ])
+
+    FVGAnalyzer().analyze(context)
+
+    assert len(context.fvgs) == 1
+
+    fvg = context.fvgs[0]
+
+    assert fvg.bullish is True
+    assert fvg.status == FVGStatus.MITIGATED
+    assert fvg.mitigation_index == 3
+    assert fvg.mitigation_time == pd.Timestamp("2026-01-01 10:45")
+
+def test_fvg_mitigation_state_is_preserved_across_analysis_cycles():
+    context = make_context([
+        {"time": "2026-01-01 10:00", "high": 100, "low": 98},
+        {"time": "2026-01-01 10:15", "high": 105, "low": 99},
+        {"time": "2026-01-01 10:30", "high": 108, "low": 102},
+        {"time": "2026-01-01 10:45", "high": 109, "low": 99},
+    ])
+
+    analyzer = FVGAnalyzer()
+
+    analyzer.analyze(context)
+
+    assert len(context.fvgs) == 1
+
+    fvg_before = context.fvgs[0]
+
+    assert fvg_before.status == FVGStatus.MITIGATED
+    assert fvg_before.mitigation_index == 3
+
+    analyzer.analyze(context)
+
+    assert len(context.fvgs) == 1
+    assert context.fvgs[0] is fvg_before
+    assert context.fvgs[0].status == FVGStatus.MITIGATED
+    assert context.fvgs[0].mitigation_index == 3            
