@@ -54,12 +54,6 @@ class FVGAnalyzer(Analyzer):
                             )
                         )
 
-                    context.fvgs.append(
-
-                        
-
-                    )
-
             # -----------------------------
             # Bearish FVG
             # -----------------------------
