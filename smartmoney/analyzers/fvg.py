@@ -9,7 +9,6 @@ class FVGAnalyzer(Analyzer):
 
     def analyze(self, context):
 
-        context.fvgs.clear()
 
         df = context.df
 
@@ -34,21 +33,30 @@ class FVGAnalyzer(Analyzer):
                 gap_low = highs[c1]
 
                 if (gap_high - gap_low) >= Config.MIN_FVG_SIZE:
+                    if not any(
+                        fvg.start_time == times.iloc[c1]
+                        and fvg.end_time == times.iloc[c3]
+                        and fvg.bullish
+                        for fvg in context.fvgs
+                    ):
+                        context.fvgs.append(
+                            FVG(
+                                start_index=c1,
+                                end_index=c3,
+    
+                                start_time=times.iloc[c1],
+                                end_time=times.iloc[c3],
+    
+                                high=gap_high,
+                                low=gap_low,
+    
+                                bullish=True,
+                            )
+                        )
 
                     context.fvgs.append(
 
-                        FVG(
-                            start_index=c1,
-                            end_index=c3,
-
-                            start_time=times.iloc[c1],
-                            end_time=times.iloc[c3],
-
-                            high=gap_high,
-                            low=gap_low,
-
-                            bullish=True,
-                        )
+                        
 
                     )
 
@@ -61,23 +69,28 @@ class FVGAnalyzer(Analyzer):
                 gap_low = highs[c3]
 
                 if (gap_high - gap_low) >= Config.MIN_FVG_SIZE:
+                    if not any(
+                        fvg.start_time == times.iloc[c1]
+                        and fvg.end_time == times.iloc[c3]
+                        and not fvg.bullish
+                        for fvg in context.fvgs
+                    ):
+                        context.fvgs.append(
+                            FVG(
+                                start_index=c1,
+                                end_index=c3,
 
-                    context.fvgs.append(
+                                start_time=times.iloc[c1],
+                                end_time=times.iloc[c3],
 
-                        FVG(
-                            start_index=c1,
-                            end_index=c3,
+                                high=gap_high,
+                                low=gap_low,
 
-                            start_time=times.iloc[c1],
-                            end_time=times.iloc[c3],
+                                bullish=False,
+                            )
 
-                            high=gap_high,
-                            low=gap_low,
-
-                            bullish=False,
                         )
-
-                    )
+                    
 
         # if Config.PRINT_FVGS:
         #     print()

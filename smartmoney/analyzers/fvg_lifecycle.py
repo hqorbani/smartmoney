@@ -15,10 +15,6 @@ class FVGLifecycleAnalyzer(Analyzer):
 
         for fvg in context.fvgs:
 
-            fvg.status = FVGStatus.ACTIVE
-            fvg.mitigation_index = None
-            fvg.mitigation_time = None
-
             for i in range(fvg.end_index + 1, len(df)):
 
                 if fvg.bullish:
