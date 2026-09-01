@@ -13,6 +13,7 @@ from smartmoney.models.entry import EntryPlan
 from smartmoney.models.stoploss import StopLossPlan
 from smartmoney.models.takeprofit import TakeProfitPlan
 from smartmoney.models.tradeplan import TradePlan
+from smartmoney.models.position_size import PositionSizePlan
 
 @dataclass
 class MarketContext:
@@ -40,6 +41,7 @@ class MarketContext:
     stop_loss_plan: StopLossPlan | None = None
     take_profit_plan: TakeProfitPlan | None = None
     trade_plan: TradePlan | None = None
+    position_size_plan: PositionSizePlan | None = None
     market_structure: MarketStructure = field(
         default_factory=MarketStructure
     )
