@@ -27,3 +27,10 @@ class FVG:
 
     mitigation_index: int | None = None
     mitigation_time: pd.Timestamp | None = None
+
+    fill_index: int | None = None
+    fill_time: pd.Timestamp | None = None
+
+    @property
+    def filled(self) -> bool:
+        return self.status == FVGStatus.FILLED

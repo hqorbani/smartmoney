@@ -27,9 +27,10 @@ class FVGAnalyzer(Analyzer):
             c1 = i - 2
             c3 = i
 
-            # -----------------------------
+            # -----------------------------------------------------
             # Bullish FVG
-            # -----------------------------
+            # -----------------------------------------------------
+
             if lows[c3] > highs[c1]:
 
                 gap_high = lows[c3]
@@ -37,30 +38,31 @@ class FVGAnalyzer(Analyzer):
 
                 if (gap_high - gap_low) >= Config.MIN_FVG_SIZE:
 
-                    if not any(
+                    exists = any(
                         fvg.start_time == times.iloc[c1]
                         and fvg.end_time == times.iloc[c3]
                         and fvg.bullish
                         for fvg in context.fvgs
-                    ):
+                    )
+
+                    if not exists:
+
                         context.fvgs.append(
                             FVG(
                                 start_index=c1,
                                 end_index=c3,
-
                                 start_time=times.iloc[c1],
                                 end_time=times.iloc[c3],
-
                                 high=gap_high,
                                 low=gap_low,
-
                                 bullish=True,
                             )
                         )
 
-            # -----------------------------
+            # -----------------------------------------------------
             # Bearish FVG
-            # -----------------------------
+            # -----------------------------------------------------
+
             elif highs[c3] < lows[c1]:
 
                 gap_high = lows[c1]
@@ -68,23 +70,23 @@ class FVGAnalyzer(Analyzer):
 
                 if (gap_high - gap_low) >= Config.MIN_FVG_SIZE:
 
-                    if not any(
+                    exists = any(
                         fvg.start_time == times.iloc[c1]
                         and fvg.end_time == times.iloc[c3]
                         and not fvg.bullish
                         for fvg in context.fvgs
-                    ):
+                    )
+
+                    if not exists:
+
                         context.fvgs.append(
                             FVG(
                                 start_index=c1,
                                 end_index=c3,
-
                                 start_time=times.iloc[c1],
                                 end_time=times.iloc[c3],
-
                                 high=gap_high,
                                 low=gap_low,
-
                                 bullish=False,
                             )
                         )
@@ -93,64 +95,46 @@ class FVGAnalyzer(Analyzer):
         # FVG Mitigation
         # ---------------------------------------------------------
         #
-        # فقط candleهای بعد از تشکیل FVG بررسی می‌شوند.
+        # IMPORTANT:
         #
-        # Bullish:
-        # اگر Low وارد محدوده FVG شود => MITIGATED
+        # FVGAnalyzer فقط مسئول:
         #
-        # Bearish:
-        # اگر High وارد محدوده FVG شود => MITIGATED
+        #     ACTIVE -> MITIGATED
         #
-        # State قبلی FVG حفظ می‌شود.
+        # است.
+        #
+        # تبدیل:
+        #
+        #     MITIGATED -> FILLED
+        #
+        # توسط FVGLifecycleAnalyzer انجام می‌شود.
+        #
+        # بنابراین حتی اگر یک candle تا انتهای Gap نفوذ کند،
+        # این analyzer فقط اولین ورود به Zone را ثبت می‌کند.
         # ---------------------------------------------------------
 
         for fvg in context.fvgs:
-
-            # FVGهایی که قبلاً mitigate شده‌اند را تغییر نده.
-            if fvg.status == FVGStatus.MITIGATED:
+            if fvg.status == FVGStatus.FILLED:
                 continue
 
-            # FVGهایی که هنوز active هستند، فقط candleهای
-            # بعد از candle تشکیل‌دهنده FVG را بررسی می‌کنند.
-            start_index = fvg.end_index + 1
-
-            for i in range(start_index, len(df)):
-
+            for i in range(fvg.end_index + 1, len(df)):
                 candle_low = lows[i]
                 candle_high = highs[i]
 
                 if fvg.bullish:
-
-                    # قیمت وارد محدوده Bullish FVG شده است.
-                    if candle_low <= fvg.high:
-
+                    if (
+                        fvg.status == FVGStatus.ACTIVE
+                        and candle_low <= fvg.high
+                    ):
                         fvg.status = FVGStatus.MITIGATED
                         fvg.mitigation_index = i
                         fvg.mitigation_time = times.iloc[i]
-
-                        break
 
                 else:
-
-                    # قیمت وارد محدوده Bearish FVG شده است.
-                    if candle_high >= fvg.low:
-
+                    if (
+                        fvg.status == FVGStatus.ACTIVE
+                        and candle_high >= fvg.low
+                    ):
                         fvg.status = FVGStatus.MITIGATED
                         fvg.mitigation_index = i
                         fvg.mitigation_time = times.iloc[i]
-
-                        break
-
-        # if Config.PRINT_FVGS:
-        #
-        #     print()
-        #     print(f"{context.symbol} {context.timeframe}")
-        #     print(f"FVGs : {len(context.fvgs)}")
-        #
-        #     for fvg in context.fvgs[-10:]:
-        #
-        #         print(
-        #             f"{'BULL' if fvg.bullish else 'BEAR'} | "
-        #             f"{fvg.status.value} | "
-        #             f"{fvg.low:.5f} -> {fvg.high:.5f}"
-        #         )
