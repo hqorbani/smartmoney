@@ -187,4 +187,19 @@ def test_no_position_size_when_risk_percent_is_zero():
         risk_percent=0,
     ).analyze(context)
 
-    assert context.position_size_plan is None    
+    assert context.position_size_plan is None
+
+def test_no_position_size_when_risk_percent_is_above_100():
+    context = make_context(
+        direction=SignalDirection.BUY,
+        entry_price=100,
+        stop_loss=98,
+        take_profit=104,
+    )
+
+    PositionSizeAnalyzer(
+        balance=10_000,
+        risk_percent=101.0,
+    ).analyze(context)
+
+    assert context.position_size_plan is None      

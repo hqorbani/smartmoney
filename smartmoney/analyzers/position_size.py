@@ -23,6 +23,11 @@ class PositionSizeAnalyzer(Analyzer):
 
         if trade_plan is None:
             return
+        if self.balance <= 0:
+            return
+
+        if self.risk_percent <= 0 or self.risk_percent > 100:
+            return
 
         stop_distance = abs(
             float(trade_plan.entry_price)
