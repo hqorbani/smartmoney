@@ -5,7 +5,7 @@ from smartmoney.models.tradeplan import TradePlan
 
 class TradePlanAnalyzer(Analyzer):
 
-    priority = 70
+    priority = 80
 
     def analyze(self, context):
 

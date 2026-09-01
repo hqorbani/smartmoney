@@ -6,7 +6,7 @@ from smartmoney.models.takeprofit import TakeProfitPlan
 
 class TakeProfitAnalyzer(Analyzer):
 
-    priority = 60
+    priority = 70
 
     def analyze(self, context):
 

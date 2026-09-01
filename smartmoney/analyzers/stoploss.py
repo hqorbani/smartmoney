@@ -5,7 +5,7 @@ from smartmoney.models.signal import SignalDirection
 
 class StopLossAnalyzer(Analyzer):
 
-    priority = 50
+    priority = 60
 
     def analyze(self, context):
 

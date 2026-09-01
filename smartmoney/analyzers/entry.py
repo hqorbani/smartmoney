@@ -5,7 +5,7 @@ from smartmoney.models.signal import SignalDirection
 
 class EntryAnalyzer(Analyzer):
 
-    priority = 40
+    priority = 50
 
     def analyze(self, context):
 

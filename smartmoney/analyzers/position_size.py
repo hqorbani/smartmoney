@@ -5,7 +5,7 @@ from smartmoney.models.position_size import PositionSizePlan
 
 class PositionSizeAnalyzer(Analyzer):
 
-    priority = 80
+    priority = 90
 
     def __init__(
         self,

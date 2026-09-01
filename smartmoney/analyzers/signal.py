@@ -4,7 +4,7 @@ from smartmoney.models.signal import Signal, SignalDirection
 
 class SignalAnalyzer(Analyzer):
 
-    priority = 30
+    priority = 40
 
     def analyze(self, context):
 
