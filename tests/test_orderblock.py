@@ -280,6 +280,14 @@ def test_bullish_orderblock_is_mitigated_when_price_enters_zone():
             "low": 102,
             "close": 105,
         },
+        # Current candle
+        {
+            "time": "2026-01-01 11:00",
+            "open": 105,
+            "high": 106,
+            "low": 104,
+            "close": 105,
+        },
     ])
 
     FVGAnalyzer().analyze(context)
@@ -290,7 +298,9 @@ def test_bullish_orderblock_is_mitigated_when_price_enters_zone():
     ob = context.orderblocks[0]
 
     assert ob.bullish is True
-    assert ob.mitigated is True        
+    assert ob.mitigated is True    
+    assert ob.mitigation_index == 3
+    assert ob.mitigation_time == pd.Timestamp("2026-01-01 10:45")    
 
 def test_bearish_orderblock_is_mitigated_when_price_enters_zone():
     context = make_context([
@@ -326,6 +336,14 @@ def test_bearish_orderblock_is_mitigated_when_price_enters_zone():
             "low": 89,
             "close": 98,
         },
+        # Current candle
+        {
+            "time": "2026-01-01 11:00",
+            "open": 98,
+            "high": 99,
+            "low": 96,
+            "close": 97,
+        },
     ])
 
     FVGAnalyzer().analyze(context)
@@ -337,3 +355,5 @@ def test_bearish_orderblock_is_mitigated_when_price_enters_zone():
 
     assert ob.bullish is False
     assert ob.mitigated is True    
+    assert ob.mitigation_index == 3
+    assert ob.mitigation_time == pd.Timestamp("2026-01-01 10:45")

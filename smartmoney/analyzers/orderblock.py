@@ -118,23 +118,25 @@ class OrderBlockAnalyzer(Analyzer):
             # Mitigation فقط بعد از تشکیل FVG مربوط به OB
             start_index = ob.related_fvg.end_index + 1
 
-            for i in range(start_index, len(df)):
+            for i in range(start_index, len(df) - 1):
 
                 candle_low = lows[i]
                 candle_high = highs[i]
 
                 if ob.bullish:
 
-                    # قیمت وارد محدوده Bullish OB شده است
                     if candle_low <= ob.high:
                         ob.mitigated = True
+                        ob.mitigation_index = i
+                        ob.mitigation_time = times.iloc[i]
                         break
 
                 else:
 
-                    # قیمت وارد محدوده Bearish OB شده است
                     if candle_high >= ob.low:
                         ob.mitigated = True
+                        ob.mitigation_index = i
+                        ob.mitigation_time = times.iloc[i]
                         break
 
         # if Config.PRINT_ORDERBLOCKS:

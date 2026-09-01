@@ -12,7 +12,6 @@ class OrderBlock:
     """
 
     index: int
-
     time: pd.Timestamp
 
     open: float
@@ -26,3 +25,5 @@ class OrderBlock:
     related_fvg: FVG | None = None
 
     mitigated: bool = False
+    mitigation_index: int | None = None
+    mitigation_time: pd.Timestamp | None = None
