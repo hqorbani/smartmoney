@@ -141,3 +141,50 @@ def test_no_position_size_when_stop_distance_is_zero():
     ).analyze(context)
 
     assert context.position_size_plan is None
+
+def test_no_position_size_when_balance_is_zero():
+    context = make_context(
+        direction=SignalDirection.BUY,
+        entry_price=100,
+        stop_loss=98,
+        take_profit=104,
+    )
+
+    PositionSizeAnalyzer(
+        balance=0,
+        risk_percent=1.0,
+    ).analyze(context)
+
+    assert context.position_size_plan is None
+
+
+def test_no_position_size_when_balance_is_negative():
+    context = make_context(
+        direction=SignalDirection.BUY,
+        entry_price=100,
+        stop_loss=98,
+        take_profit=104,
+    )
+
+    PositionSizeAnalyzer(
+        balance=-10_000,
+        risk_percent=1.0,
+    ).analyze(context)
+
+    assert context.position_size_plan is None
+
+
+def test_no_position_size_when_risk_percent_is_zero():
+    context = make_context(
+        direction=SignalDirection.BUY,
+        entry_price=100,
+        stop_loss=98,
+        take_profit=104,
+    )
+
+    PositionSizeAnalyzer(
+        balance=10_000,
+        risk_percent=0,
+    ).analyze(context)
+
+    assert context.position_size_plan is None    
