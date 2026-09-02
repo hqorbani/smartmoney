@@ -34,6 +34,18 @@ class MT5DataProvider:
 
         return self._connected
 
+    def get_account_balance(self) -> float:
+        """Return current account balance."""
+        account = mt5.account_info()
+
+        if account is None:
+            code, message = mt5.last_error()
+            raise RuntimeError(
+                f"Cannot get account information ({code}): {message}"
+            )
+
+        return float(account.balance)
+
     def symbol_select(self, symbol: str) -> None:
         """Ensure symbol is available in Market Watch."""
 

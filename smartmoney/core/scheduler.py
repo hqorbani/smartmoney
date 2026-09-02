@@ -12,6 +12,7 @@ from smartmoney.query.query_engine import QueryEngine
 from smartmoney.repository.signal_repository import SignalRepository
 from smartmoney.scoring.engine import ScoreEngine
 from smartmoney.services.distance_service import DistanceService
+from smartmoney.models.signal import SignalDirection
 
 
 from smartmoney.core.market_structure_engine import (
@@ -144,11 +145,71 @@ class Scheduler:
 
                 signals = self.scanner_engine.run(context)
 
-                # ----------------------------
-                # Score
-                # ----------------------------
-
                 for signal in signals:
+
+                    if (
+                        signal.orderblock is not None
+                        and signal.fvg is not None
+                    ):
+                        original_context_signal = context.signal
+                        original_entry_plan = context.entry_plan
+                        original_stop_loss_plan = context.stop_loss_plan
+                        original_take_profit_plan = context.take_profit_plan
+                        original_trade_plan = context.trade_plan
+                        original_position_size_plan = context.position_size_plan
+                        original_direction = signal.direction
+
+                        if signal.direction == "BUY":
+                            signal.direction = SignalDirection.BUY
+
+                        elif signal.direction == "SELL":
+                            signal.direction = SignalDirection.SELL
+
+                        context.signal = signal
+
+                        self.analyzer_engine.run_from_priority(
+                            context,
+                            50,
+                        )
+
+                        setattr(
+                            signal,
+                            "entry_plan",
+                            context.entry_plan,
+                        )
+
+                        setattr(
+                            signal,
+                            "stop_loss_plan",
+                            context.stop_loss_plan,
+                        )
+
+                        setattr(
+                            signal,
+                            "take_profit_plan",
+                            context.take_profit_plan,
+                        )
+
+                        setattr(
+                            signal,
+                            "trade_plan",
+                            context.trade_plan,
+                        )
+
+                        setattr(
+                            signal,
+                            "position_size_plan",
+                            context.position_size_plan,
+                        )
+
+                        signal.direction = original_direction
+
+                        context.signal = original_context_signal
+                        context.entry_plan = original_entry_plan
+                        context.stop_loss_plan = original_stop_loss_plan
+                        context.take_profit_plan = original_take_profit_plan
+                        context.trade_plan = original_trade_plan
+                        context.position_size_plan = original_position_size_plan
 
                     self.score_engine.calculate(
                         signal,

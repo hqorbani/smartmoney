@@ -9,6 +9,7 @@ from smartmoney.core.scheduler import Scheduler
 from smartmoney.core.scanner_engine import ScannerEngine
 
 from smartmoney.analyzers.base import Analyzer
+from smartmoney.analyzers.position_size import PositionSizeAnalyzer
 from smartmoney.scanners.base import Scanner
 from smartmoney.scoring.base import ScoreRule
 from smartmoney.outputs.base import Output
@@ -52,7 +53,9 @@ def create_context_manager() -> ContextManager:
 # Analyzer Engine
 # ==========================================================
 
-def _create_analyzer_engine() -> AnalyzerEngine:
+def _create_analyzer_engine(
+    position_size_analyzer=None,
+) -> AnalyzerEngine:
 
     engine = AnalyzerEngine()
 
@@ -62,11 +65,12 @@ def _create_analyzer_engine() -> AnalyzerEngine:
     )
 
     for analyzer in analyzers:
-
         engine.add(analyzer)
 
-    return engine
+    if position_size_analyzer is not None:
+        engine.add(position_size_analyzer)
 
+    return engine
 
 # ==========================================================
 # Scanner Engine
@@ -139,6 +143,12 @@ def create_live_scheduler() -> Scheduler:
     distance_service = DistanceService()
 
     provider = create_provider()
+    provider.connect()
+
+    position_size_analyzer = PositionSizeAnalyzer(
+        balance=provider.get_account_balance(),
+        risk_percent=Config.RISK_PERCENT,
+    )
 
     scheduler = Scheduler(
 
@@ -146,7 +156,9 @@ def create_live_scheduler() -> Scheduler:
 
         context_manager=create_context_manager(),
 
-        analyzer_engine=_create_analyzer_engine(),
+        analyzer_engine=_create_analyzer_engine(
+            position_size_analyzer=position_size_analyzer,
+        ),
 
         scanner_engine=_create_scanner_engine(),
 

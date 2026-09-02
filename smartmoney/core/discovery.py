@@ -61,6 +61,9 @@ def _discover_module(
         if inspect.isabstract(obj):
             continue
 
+        if obj.__name__ == "PositionSizeAnalyzer":
+            continue
+
         instances.append(obj())
 
     return instances

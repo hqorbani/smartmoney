@@ -13,3 +13,10 @@ class AnalyzerEngine:
             analyzer.analyze(context)
 
         return context
+
+    def run_from_priority(self, context, priority):
+        for analyzer in self._analyzers:
+            if analyzer.priority >= priority:
+                analyzer.analyze(context)
+
+        return context
