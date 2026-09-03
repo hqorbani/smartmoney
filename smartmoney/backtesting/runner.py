@@ -10,6 +10,22 @@ from smartmoney.backtesting.orderblock_zones import (
 from smartmoney.core.context import MarketContext
 from smartmoney.models.orderblock import OrderBlock
 
+from smartmoney.backtesting.outcome import (
+    TradeOutcomeResult,
+    calculate_entry_price,
+    simulate_outcome,
+)
+
+
+@dataclass(frozen=True, slots=True)
+class BacktestTrade:
+    orderblock: OrderBlock
+    touch_index: int
+    touch_zone: OrderBlockDepthZone
+    penetration: float
+    entry_price: float
+    outcome_1r: TradeOutcomeResult
+    outcome_2r: TradeOutcomeResult        
 
 @dataclass(frozen=True, slots=True)
 class BacktestOrderBlock:
@@ -35,8 +51,7 @@ class HistoricalBacktestRunner:
 
         self._fvg_analyzer = FVGAnalyzer()
         self._orderblock_analyzer = OrderBlockAnalyzer()
-
-    def run(self, df: pd.DataFrame) -> list[BacktestOrderBlock]:
+    def run(self, df: pd.DataFrame) -> list[BacktestTrade]:
         if df.empty:
             return []
 
@@ -50,7 +65,7 @@ class HistoricalBacktestRunner:
 
         known_orderblocks: set[tuple[int, bool]] = set()
         pending_orderblocks: list[OrderBlock] = []
-        results: list[BacktestOrderBlock] = []
+        touches: list[BacktestOrderBlock] = []
 
         for current_index in range(len(df)):
             context.df = df.iloc[: current_index + 1].copy()
@@ -68,16 +83,13 @@ class HistoricalBacktestRunner:
             remaining: list[OrderBlock] = []
 
             for ob in pending_orderblocks:
-                touch = self._check_touch(
-                    df.iloc[current_index],
-                    ob,
-                )
+                touch = self._check_touch(df.iloc[current_index], ob)
 
                 if touch is None:
                     remaining.append(ob)
                     continue
 
-                results.append(
+                touches.append(
                     BacktestOrderBlock(
                         orderblock=ob,
                         touch_index=current_index,
@@ -88,8 +100,47 @@ class HistoricalBacktestRunner:
 
             pending_orderblocks = remaining
 
-        return results
+        results: list[BacktestTrade] = []
 
+        for touch in touches:
+            candle = df.iloc[touch.touch_index]
+
+            entry_price = calculate_entry_price(
+                touch.orderblock,
+                candle_low=float(candle["low"]),
+                candle_high=float(candle["high"]),
+            )
+
+            outcome_1r = simulate_outcome(
+                df=df,
+                ob=touch.orderblock,
+                touch_index=touch.touch_index,
+                entry_price=entry_price,
+                rr=1.0,
+            )
+
+            outcome_2r = simulate_outcome(
+                df=df,
+                ob=touch.orderblock,
+                touch_index=touch.touch_index,
+                entry_price=entry_price,
+                rr=2.0,
+            )
+
+            results.append(
+                BacktestTrade(
+                    orderblock=touch.orderblock,
+                    touch_index=touch.touch_index,
+                    touch_zone=touch.touch_zone,
+                    penetration=touch.penetration,
+                    entry_price=entry_price,
+                    outcome_1r=outcome_1r,
+                    outcome_2r=outcome_2r,
+                )
+            )
+
+        return results
+    
     @staticmethod
     def _register_confirmed_orderblocks(
         orderblocks: list[OrderBlock],
