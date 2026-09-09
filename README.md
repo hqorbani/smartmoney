@@ -4,8 +4,7 @@ Smart Money Concepts (SMC) trading analysis framework for MetaTrader 5.
 
 SmartMoney is a modular Python project for detecting and evaluating SMC/ICT-style market structures and trade opportunities. The system separates market data, domain models, analysis, scanning, scoring, querying, visualization, and application orchestration so that each part can evolve independently.
 
-> **Current branch:** `experiment/alternative-strategy`  
-> **Documentation baseline:** commit `632b5c1540f6374801d45cadd50e08555ed088ad`
+> **Current branch:** `main`  
 
 ---
 
@@ -90,7 +89,10 @@ The current codebase contains the following major areas.
 The repository contains focused tests for:
 
 - Analyzer execution
-- Charting
+- Historical backtesting
+- Order Block zone statistics
+- Order Block diagnostics
+- MetaTrader 5 data provider
 - Entry
 - Full pipeline
 - FVG
@@ -1352,6 +1354,223 @@ The architecture should evolve deliberately rather than accumulating shortcuts t
 
 ---
 
-# 38. License
+# 38. # Historical Backtesting and Order Block Research
+
+The project includes a historical backtesting and research workflow for evaluating Order Block behavior without exposing future candles to the analyzers during first-touch detection.
+
+## Historical Backtest Runner
+
+File:
+
+```
+`smartmoney/backtesting/runner.py`
+```
+
+`HistoricalBacktestRunner` replays historical candles one by one.
+
+For each historical candle:
+
+1. Only candles available up to the current index are exposed to the analyzers.
+2. FVG and Order Block analysis is executed on the currently available history.
+3. Newly confirmed Order Blocks are registered.
+4. Pending Order Blocks are monitored for their first price touch.
+5. A first-touch observation is recorded only once for each Order Block.
+
+This prevents future candles from being used by the analyzers or by first-touch classification.
+
+## Order Block First-Touch Zones
+
+The first candle that overlaps an Order Block is classified according to penetration depth.
+
+The penetration value is normalized between `0.0` and `1.0`.
+
+Zones are:
+
+| Zone     | Penetration          |
+| -------- | -------------------- |
+| `FIRST`  | `<= 1/3`             |
+| `MIDDLE` | `> 1/3` and `<= 2/3` |
+| `FINAL`  | `> 2/3`              |
+
+For bullish Order Blocks:
+
+```
+penetration =
+    (OB High - Candle Low)
+    / (OB High - OB Low)
+```
+
+For bearish Order Blocks:
+
+```
+penetration =
+    (Candle High - OB Low)
+    / (OB High - OB Low)
+```
+
+## Penetration Metrics
+
+Each historical observation records two different penetration metrics.
+
+### First-Touch Penetration
+
+`penetration` describes only the candle that first touches the Order Block.
+
+This value is used for first-touch zone classification.
+
+### Maximum Order Block Penetration
+
+`max_ob_penetration` records the deepest penetration observed from the first-touch candle through the remaining historical dataset.
+
+The value is normalized and clamped to:
+
+```
+0.0 <= max_ob_penetration <= 1.0
+```
+
+This allows research to distinguish the initial interaction with an Order Block from its maximum subsequent depth.
+
+## Trade Outcome Simulation
+
+Each valid first-touch observation can be evaluated using multiple risk/reward targets.
+
+The current research workflow evaluates:
+
+* `1R`
+* `2R`
+
+Possible outcomes are:
+
+* `WIN`
+* `LOSS`
+* `UNRESOLVED`
+
+An observation may also have no simulated outcome when the calculated entry does not leave positive risk.
+
+## Order Block Zone Statistics
+
+File:
+
+```
+`smartmoney/backtesting/orderblock_stats.py`
+```
+
+Statistics are aggregated by first-touch zone.
+
+The current statistics include:
+
+* Number of touches
+* Zone frequency
+* 1R wins
+* 1R losses
+* 1R unresolved outcomes
+* 2R wins
+* 2R losses
+* 2R unresolved outcomes
+* Resolution rates
+* Win rates calculated from resolved trades
+* Raw success rates calculated from all touches
+* Average first-touch penetration
+* Average maximum Order Block penetration
+* Average MFE
+* Average MAE
+
+Win rate is calculated as:
+
+```
+wins / (wins + losses)
+```
+
+Raw success rate is calculated as:
+
+```
+wins / touches
+```
+
+Unresolved outcomes are excluded from win rate but remain visible in the statistics.
+
+## Order Block Diagnostics
+
+File:
+
+```
+`smartmoney/backtesting/orderblock_diagnostics.py`
+```
+
+Diagnostics provide additional information about observations that do not produce resolved trade outcomes.
+
+For each Order Block zone, diagnostics include:
+
+* Total touches
+* Zero-risk touches
+* Resolved 1R outcomes
+* Unresolved 1R outcomes
+* Resolved 2R outcomes
+* Unresolved 2R outcomes
+
+Unresolved outcomes are also grouped according to how close the first touch occurred to the end of the historical dataset:
+
+* Last 10 candles
+* Last 20 candles
+* Last 50 candles
+* Last 100 candles
+
+This helps distinguish unresolved trades caused by insufficient remaining historical data from other unresolved behavior.
+
+## Running Historical Research
+
+The research script is:
+
+```
+`run_research.py`
+```
+
+Run it with:
+
+```
+python run_research.py
+```
+
+The script evaluates the configured timeframes and prints:
+
+* Candle count
+* Number of observations
+* Zone frequency
+* 1R and 2R win rates
+* 1R and 2R resolution rates
+* Average first-touch penetration
+* Average maximum penetration
+* Zero-risk observations
+* Resolved outcomes
+* Unresolved outcomes
+* Unresolved observations near the end of the dataset
+
+The current research script uses:
+
+```
+NAS100
+```
+
+and the timeframes configured in:
+
+```
+`smartmoney/config.py`
+```
+
+## MT5 and Chart Utilities
+
+MetaTrader 5 integration is covered by unit tests using mocked MT5 responses where possible.
+
+Manual chart visualization is available through:
+
+```
+`scripts/show_chart.py`
+```
+
+This script is intentionally separate from the automated pytest suite because it requires a real MetaTrader 5 environment and displays a chart.
+
+---
+
+# 39. License
 
 Private project.

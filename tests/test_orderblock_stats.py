@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import pandas as pd
 
 from smartmoney.backtesting.orderblock_stats import analyze_orderblock_zones
@@ -58,6 +60,7 @@ def make_trade(
         touch_index=1,
         touch_zone=zone,
         penetration=penetration,
+        max_ob_penetration=penetration,
         entry_price=95.0,
         outcome_1r=result_1r,
         outcome_2r=result_2r,
@@ -225,3 +228,38 @@ def test_average_penetration_and_excursions_are_calculated():
     assert first.average_mae_1r == 2.5
     assert first.average_mfe_2r == 16.0
     assert first.average_mae_2r == 5.0
+
+def test_zero_risk_touch_remains_in_zone_stats_without_outcome():
+    trade = make_trade(
+        OrderBlockDepthZone.FINAL,
+        TradeOutcome.WIN,
+        TradeOutcome.WIN,
+        penetration=1.0,
+    )
+
+    trade = replace(
+        trade,
+        outcome_1r=None,
+        outcome_2r=None,
+    )
+
+    stats = analyze_orderblock_zones([trade])
+
+    final = stats[OrderBlockDepthZone.FINAL]
+
+    assert final.touches == 1
+    assert final.zone_frequency == 1.0
+    assert final.average_penetration == 1.0
+
+    assert final.wins_1r == 0
+    assert final.losses_1r == 0
+    assert final.unresolved_1r == 0
+
+    assert final.wins_2r == 0
+    assert final.losses_2r == 0
+    assert final.unresolved_2r == 0
+
+    assert final.resolution_rate_1r == 0.0
+    assert final.resolution_rate_2r == 0.0
+    assert final.win_rate_1r == 0.0
+    assert final.win_rate_2r == 0.0    

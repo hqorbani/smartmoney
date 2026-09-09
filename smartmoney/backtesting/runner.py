@@ -7,14 +7,14 @@ from smartmoney.analyzers.orderblock import OrderBlockAnalyzer
 from smartmoney.backtesting.orderblock_zones import (
     OrderBlockDepthZone,
 )
-from smartmoney.core.context import MarketContext
-from smartmoney.models.orderblock import OrderBlock
-
 from smartmoney.backtesting.outcome import (
     TradeOutcomeResult,
     calculate_entry_price,
+    calculate_trade_levels,
     simulate_outcome,
 )
+from smartmoney.core.context import MarketContext
+from smartmoney.models.orderblock import OrderBlock
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,9 +23,11 @@ class BacktestTrade:
     touch_index: int
     touch_zone: OrderBlockDepthZone
     penetration: float
+    max_ob_penetration: float
     entry_price: float
-    outcome_1r: TradeOutcomeResult
-    outcome_2r: TradeOutcomeResult        
+    outcome_1r: TradeOutcomeResult | None
+    outcome_2r: TradeOutcomeResult | None
+
 
 @dataclass(frozen=True, slots=True)
 class BacktestOrderBlock:
@@ -51,6 +53,7 @@ class HistoricalBacktestRunner:
 
         self._fvg_analyzer = FVGAnalyzer()
         self._orderblock_analyzer = OrderBlockAnalyzer()
+
     def run(self, df: pd.DataFrame) -> list[BacktestTrade]:
         if df.empty:
             return []
@@ -111,20 +114,40 @@ class HistoricalBacktestRunner:
                 candle_high=float(candle["high"]),
             )
 
-            outcome_1r = simulate_outcome(
-                df=df,
-                ob=touch.orderblock,
-                touch_index=touch.touch_index,
-                entry_price=entry_price,
-                rr=1.0,
-            )
+            try:
+                calculate_trade_levels(
+                    ob=touch.orderblock,
+                    entry_price=entry_price,
+                    rr=1.0,
+                )
+            except ValueError as exc:
+                if str(exc) != "Entry price must leave positive risk":
+                    raise
 
-            outcome_2r = simulate_outcome(
+                outcome_1r = None
+                outcome_2r = None
+            else:
+                outcome_1r = simulate_outcome(
+                    df=df,
+                    ob=touch.orderblock,
+                    touch_index=touch.touch_index,
+                    entry_price=entry_price,
+                    rr=1.0,
+                )
+
+                outcome_2r = simulate_outcome(
+                    df=df,
+                    ob=touch.orderblock,
+                    touch_index=touch.touch_index,
+                    entry_price=entry_price,
+                    rr=2.0,
+                )
+
+            max_ob_penetration = self._calculate_max_ob_penetration(
                 df=df,
                 ob=touch.orderblock,
                 touch_index=touch.touch_index,
-                entry_price=entry_price,
-                rr=2.0,
+                initial_penetration=touch.penetration,
             )
 
             results.append(
@@ -133,6 +156,7 @@ class HistoricalBacktestRunner:
                     touch_index=touch.touch_index,
                     touch_zone=touch.touch_zone,
                     penetration=touch.penetration,
+                    max_ob_penetration=max_ob_penetration,
                     entry_price=entry_price,
                     outcome_1r=outcome_1r,
                     outcome_2r=outcome_2r,
@@ -140,7 +164,49 @@ class HistoricalBacktestRunner:
             )
 
         return results
-    
+
+    @staticmethod
+    def _calculate_max_ob_penetration(
+        df: pd.DataFrame,
+        ob: OrderBlock,
+        touch_index: int,
+        initial_penetration: float,
+    ) -> float:
+        if touch_index < 0 or touch_index >= len(df):
+            raise ValueError("touch_index is outside the DataFrame")
+
+        if ob.high <= ob.low:
+            raise ValueError("Order Block high must be greater than low")
+
+        last_index = len(df) - 1
+
+        max_penetration = initial_penetration
+        depth = ob.high - ob.low
+
+        for index in range(touch_index, last_index + 1):
+            candle = df.iloc[index]
+
+            if candle["low"] > ob.high or candle["high"] < ob.low:
+                continue
+
+            if ob.bullish:
+                penetration = (
+                    ob.high - float(candle["low"])
+                ) / depth
+            else:
+                penetration = (
+                    float(candle["high"]) - ob.low
+                ) / depth
+
+            penetration = min(1.0, max(0.0, penetration))
+
+            max_penetration = max(
+                max_penetration,
+                penetration,
+            )
+
+        return max_penetration
+
     @staticmethod
     def _register_confirmed_orderblocks(
         orderblocks: list[OrderBlock],

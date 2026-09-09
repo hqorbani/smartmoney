@@ -20,6 +20,7 @@ class OrderBlockZoneStats:
     unresolved_2r: int
 
     average_penetration: float
+    average_max_ob_penetration: float
     average_mfe_1r: float
     average_mae_1r: float
     average_mfe_2r: float
@@ -101,28 +102,38 @@ def analyze_orderblock_zones(
         touches = len(zone_trades)
 
         wins_1r = sum(
-            trade.outcome_1r.outcome is TradeOutcome.WIN
+            trade.outcome_1r is not None
+            and trade.outcome_1r.outcome is TradeOutcome.WIN
             for trade in zone_trades
         )
+
         losses_1r = sum(
-            trade.outcome_1r.outcome is TradeOutcome.LOSS
+            trade.outcome_1r is not None
+            and trade.outcome_1r.outcome is TradeOutcome.LOSS
             for trade in zone_trades
         )
+
         unresolved_1r = sum(
-            trade.outcome_1r.outcome is TradeOutcome.UNRESOLVED
+            trade.outcome_1r is not None
+            and trade.outcome_1r.outcome is TradeOutcome.UNRESOLVED
             for trade in zone_trades
         )
 
         wins_2r = sum(
-            trade.outcome_2r.outcome is TradeOutcome.WIN
+            trade.outcome_2r is not None
+            and trade.outcome_2r.outcome is TradeOutcome.WIN
             for trade in zone_trades
         )
+
         losses_2r = sum(
-            trade.outcome_2r.outcome is TradeOutcome.LOSS
+            trade.outcome_2r is not None
+            and trade.outcome_2r.outcome is TradeOutcome.LOSS
             for trade in zone_trades
         )
+
         unresolved_2r = sum(
-            trade.outcome_2r.outcome is TradeOutcome.UNRESOLVED
+            trade.outcome_2r is not None
+            and trade.outcome_2r.outcome is TradeOutcome.UNRESOLVED
             for trade in zone_trades
         )
 
@@ -130,28 +141,56 @@ def analyze_orderblock_zones(
             average_penetration = sum(
                 trade.penetration for trade in zone_trades
             ) / touches
-
-            average_mfe_1r = sum(
-                trade.outcome_1r.mfe for trade in zone_trades
+            average_max_ob_penetration = sum(
+                trade.max_ob_penetration
+                for trade in zone_trades
             ) / touches
+            outcome_1r_trades = [
+                trade.outcome_1r
+                for trade in zone_trades
+                if trade.outcome_1r is not None
+            ]
 
-            average_mae_1r = sum(
-                trade.outcome_1r.mae for trade in zone_trades
-            ) / touches
+            outcome_2r_trades = [
+                trade.outcome_2r
+                for trade in zone_trades
+                if trade.outcome_2r is not None
+            ]
 
-            average_mfe_2r = sum(
-                trade.outcome_2r.mfe for trade in zone_trades
-            ) / touches
+            average_mfe_1r = (
+                sum(outcome.mfe for outcome in outcome_1r_trades)
+                / len(outcome_1r_trades)
+                if outcome_1r_trades
+                else 0.0
+            )
 
-            average_mae_2r = sum(
-                trade.outcome_2r.mae for trade in zone_trades
-            ) / touches
+            average_mae_1r = (
+                sum(outcome.mae for outcome in outcome_1r_trades)
+                / len(outcome_1r_trades)
+                if outcome_1r_trades
+                else 0.0
+            )
+
+            average_mfe_2r = (
+                sum(outcome.mfe for outcome in outcome_2r_trades)
+                / len(outcome_2r_trades)
+                if outcome_2r_trades
+                else 0.0
+            )
+
+            average_mae_2r = (
+                sum(outcome.mae for outcome in outcome_2r_trades)
+                / len(outcome_2r_trades)
+                if outcome_2r_trades
+                else 0.0
+            )
         else:
             average_penetration = 0.0
             average_mfe_1r = 0.0
             average_mae_1r = 0.0
             average_mfe_2r = 0.0
             average_mae_2r = 0.0
+            average_max_ob_penetration = 0.0
 
         zone_frequency = (
             touches / total_trades
@@ -170,6 +209,7 @@ def analyze_orderblock_zones(
             losses_2r=losses_2r,
             unresolved_2r=unresolved_2r,
             average_penetration=average_penetration,
+            average_max_ob_penetration=average_max_ob_penetration,
             average_mfe_1r=average_mfe_1r,
             average_mae_1r=average_mae_1r,
             average_mfe_2r=average_mfe_2r,

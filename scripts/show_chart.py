@@ -6,7 +6,7 @@ from smartmoney.core.mt5 import MT5DataProvider
 from smartmoney.visualization.chart import ChartVisualizer
 
 
-def test_chart():
+def main() -> None:
     provider = MT5DataProvider()
 
     provider.connect()
@@ -32,3 +32,7 @@ def test_chart():
 
     finally:
         provider.shutdown()
+
+
+if __name__ == "__main__":
+    main()
