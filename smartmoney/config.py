@@ -11,7 +11,7 @@ class Config:
     # ----------------------------
     RISK_PERCENT = 1.0
     
-    HISTORY_BARS = 700
+    HISTORY_BARS = 3000
 
     SCAN_INTERVAL = 3
 
@@ -30,9 +30,9 @@ class Config:
     #-]
 
     TIMEFRAMES = [
-        mt5.TIMEFRAME_M1,
+        # mt5.TIMEFRAME_M1,
         mt5.TIMEFRAME_M3,
-        # mt5.TIMEFRAME_M5,
+        mt5.TIMEFRAME_M5,
         # mt5.TIMEFRAME_M15,
         # mt5.TIMEFRAME_H1
     ]
@@ -79,3 +79,9 @@ class Config:
 
     STRUCTURE_BREAK_MODE = "close"
     #-- close|wick
+
+
+    # ----------------------------
+    # BackTest
+    # ----------------------------
+    EXPORT_BACKTEST_TRADE_DETAILS = False

@@ -1,7 +1,12 @@
+from pathlib import Path
+
 from smartmoney.backtesting.orderblock_diagnostics import (
     analyze_orderblock_diagnostics,
 )
 from smartmoney.backtesting.research import HistoricalResearchRunner
+from smartmoney.backtesting.trade_export import (
+    export_backtest_trade_details_to_excel,
+)
 from smartmoney.config import Config
 from smartmoney.core.mt5 import MT5DataProvider
 
@@ -19,7 +24,20 @@ def main() -> None:
             provider=provider,
             candle_count=Config.HISTORY_BARS,
         )
+        if Config.EXPORT_BACKTEST_TRADE_DETAILS:
+            output_path = (
+                Path("exports")
+                / f"NAS100_TF_{timeframe}_backtest_trades.xlsx"
+            )
 
+            export_backtest_trade_details_to_excel(
+                result=result,
+                output_path=output_path,
+            )
+
+            print(
+                f"Trade details exported to: {output_path}"
+            )
         diagnostics = analyze_orderblock_diagnostics(
             trades=result.trades,
             candle_count=result.candle_count,

@@ -18,6 +18,7 @@ class HistoricalResearchResult:
     symbol: str
     timeframe: int
     candle_count: int
+    df: pd.DataFrame
     trades: list[BacktestTrade]
     zone_stats: dict[OrderBlockDepthZone, OrderBlockZoneStats]
 
@@ -50,6 +51,7 @@ class HistoricalResearchRunner:
             symbol=self.symbol,
             timeframe=self.timeframe,
             candle_count=len(df),
+            df=df,
             trades=trades,
             zone_stats=zone_stats,
         )
