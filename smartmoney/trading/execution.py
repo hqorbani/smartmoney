@@ -18,6 +18,7 @@ class ExecutionResult:
     plan: TradePlan
     message: str
     position_size_plan: PositionSizePlan | None = None
+    broker_result: object | None = None
 
     def to_position(self) -> TradePosition:
         if self.status != ExecutionStatus.DRY_RUN:

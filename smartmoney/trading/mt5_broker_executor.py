@@ -4,6 +4,9 @@ from smartmoney.trading.execution import (
 )
 from smartmoney.trading.trade_plan import TradePlan
 from smartmoney.trading.broker_executor import BrokerExecutor
+from smartmoney.trading.mt5_order_request import (
+    build_mt5_order_request,
+)
 
 
 class MT5BrokerExecutor(BrokerExecutor):
@@ -14,15 +17,31 @@ class MT5BrokerExecutor(BrokerExecutor):
     without connecting to a real terminal.
     """
 
-    def __init__(self, mt5_client) -> None:
+    def __init__(
+        self,
+        mt5_client,
+        volume: float = 1.0,
+        success_retcode: int = 10009,
+    ) -> None:
         self.mt5_client = mt5_client
+        self.volume = volume
+        if success_retcode <= 0:
+            raise ValueError(
+                "Success retcode must be positive"
+            )
+        self.success_retcode = success_retcode
 
     def execute(
         self,
         plan: TradePlan,
     ) -> ExecutionResult:
         try:
-            success = self.mt5_client.send_order(plan)
+            request = build_mt5_order_request(
+                plan=plan,
+                volume=self.volume,
+            )
+
+            success = self.mt5_client.send_order(request)
         except Exception as exc:
             return ExecutionResult(
                 status=ExecutionStatus.REJECTED,
@@ -30,15 +49,31 @@ class MT5BrokerExecutor(BrokerExecutor):
                 message=str(exc),
             )
 
+        if isinstance(success, dict):
+            retcode = success.get("retcode")
+
+            if retcode != self.success_retcode:
+                return ExecutionResult(
+                    status=ExecutionStatus.REJECTED,
+                    plan=plan,
+                    message=success.get(
+                        "comment",
+                        "MT5 order rejected",
+                    ),
+                    broker_result=success,
+                )
+
         if not success:
             return ExecutionResult(
                 status=ExecutionStatus.REJECTED,
                 plan=plan,
                 message="MT5 order rejected",
+                broker_result=success,
             )
 
         return ExecutionResult(
             status=ExecutionStatus.EXECUTED,
             plan=plan,
             message="MT5 order executed",
+            broker_result=success,
         )
