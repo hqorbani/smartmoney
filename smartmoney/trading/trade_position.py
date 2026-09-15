@@ -30,6 +30,11 @@ class TradePosition:
     status: PositionStatus = PositionStatus.OPEN
     exit_price: float | None = None
     exit_reason: ExitReason | None = None
+    def __post_init__(self) -> None:
+        if self.size <= 0:
+            raise ValueError(
+                "Position size must be positive"
+            )
     @property
     def pnl(self) -> float | None:
         if self.status != PositionStatus.CLOSED:

@@ -366,4 +366,46 @@ def test_closed_trade_position_calculates_negative_pnl_for_sell():
         exit_reason=ExitReason.STOP_LOSS,
     )
 
-    assert closed_position.pnl == -4.0    
+    assert closed_position.pnl == -4.0
+
+def test_trade_position_rejects_non_positive_size():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Position size must be positive",
+    ):
+        TradePosition(
+            plan=plan,
+            size=0,
+        )
+
+def test_trade_position_rejects_negative_size():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Position size must be positive",
+    ):
+        TradePosition(
+            plan=plan,
+            size=-1.0,
+        )        
