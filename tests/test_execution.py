@@ -554,3 +554,22 @@ def test_dry_run_executor_rejects_empty_symbol():
 
     assert result.status == ExecutionStatus.REJECTED
     assert result.message == "Symbol must not be empty"
+
+def test_dry_run_executor_prioritizes_symbol_validation():
+    plan = TradePlan(
+        symbol="",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=100.0,
+        stop_loss=101.0,
+        take_profit=99.0,
+        risk_distance=0.0,
+        orderblock_index=10,
+    )
+
+    executor = DryRunExecutor()
+
+    result = executor.execute(plan)
+
+    assert result.status == ExecutionStatus.REJECTED
+    assert result.message == "Symbol must not be empty"    
