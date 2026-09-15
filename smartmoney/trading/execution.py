@@ -1,6 +1,6 @@
+from smartmoney.models.position_size import PositionSizePlan
 from dataclasses import dataclass
 from enum import Enum
-
 from smartmoney.trading.trade_plan import (
     TradeDirection,
     TradePlan,
@@ -11,14 +11,15 @@ class ExecutionStatus(Enum):
     EXECUTED = "executed"
     REJECTED = "rejected"
 
-
 @dataclass(frozen=True, slots=True)
 class ExecutionResult:
     status: ExecutionStatus
     plan: TradePlan
     message: str
+    position_size_plan: PositionSizePlan | None = None
 
 from abc import ABC, abstractmethod
+
 class TradeExecutor(ABC):
     """
     Interface for trade execution implementations.
@@ -35,6 +36,11 @@ class DryRunExecutor(TradeExecutor):
     """
     Simulate trade execution without sending any order to a broker.
     """
+    def __init__(
+        self,
+        position_size_plan: PositionSizePlan | None = None,
+    ) -> None:
+        self.position_size_plan = position_size_plan
 
     def execute(self, plan: TradePlan) -> ExecutionResult:
         if plan.risk_distance <= 0:
@@ -68,4 +74,6 @@ class DryRunExecutor(TradeExecutor):
             status=ExecutionStatus.DRY_RUN,
             plan=plan,
             message="Dry-run order accepted",
+            position_size_plan=self.position_size_plan,
         )
+    

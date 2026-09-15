@@ -1,4 +1,4 @@
-
+from smartmoney.models.position_size import PositionSizePlan
 from smartmoney.trading.trade_plan import (
     TradeDirection,
     TradePlan,
@@ -148,4 +148,64 @@ def test_dry_run_executor_rejects_invalid_sell_levels():
 
     assert result.status == ExecutionStatus.REJECTED
     assert result.plan == plan
-    assert result.message == "Invalid SELL trade levels"        
+    assert result.message == "Invalid SELL trade levels"
+
+def test_execution_result_can_store_position_size_plan():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    position_size_plan = PositionSizePlan(
+        balance=10000.0,
+        risk_percent=1.0,
+        risk_amount=100.0,
+        stop_distance=2.3,
+        position_size=43.47826087,
+    )
+
+    result = ExecutionResult(
+        status=ExecutionStatus.DRY_RUN,
+        plan=plan,
+        message="Dry-run order accepted",
+        position_size_plan=position_size_plan,
+    )
+
+    assert result.position_size_plan == position_size_plan    
+
+def test_dry_run_executor_stores_position_size_plan():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    position_size_plan = PositionSizePlan(
+        balance=10000.0,
+        risk_percent=1.0,
+        risk_amount=100.0,
+        stop_distance=2.3,
+        position_size=43.47826087,
+    )
+
+    executor = DryRunExecutor(
+        position_size_plan=position_size_plan,
+    )
+
+    result = executor.execute(plan)
+
+    assert result.status == ExecutionStatus.DRY_RUN
+    assert result.plan == plan
+    assert result.position_size_plan == position_size_plan
+        

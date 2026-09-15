@@ -1,9 +1,8 @@
 from types import SimpleNamespace
-
 from smartmoney.analyzers.position_size import PositionSizeAnalyzer
 from smartmoney.core.context import MarketContext
 from smartmoney.models.signal import SignalDirection
-
+from smartmoney.trading.position_size import PositionSize
 
 def make_context(
     direction,
@@ -202,4 +201,15 @@ def test_no_position_size_when_risk_percent_is_above_100():
         risk_percent=101.0,
     ).analyze(context)
 
-    assert context.position_size_plan is None      
+    assert context.position_size_plan is None
+
+def test_position_size_stores_calculated_values():
+    position = PositionSize(
+        risk_amount=100.0,
+        risk_distance=2.5,
+        size=40.0,
+    )
+
+    assert position.risk_amount == 100.0
+    assert position.risk_distance == 2.5
+    assert position.size == 40.0
