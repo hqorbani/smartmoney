@@ -592,3 +592,22 @@ def test_dry_run_executor_rejects_invalid_timeframe():
 
     assert result.status == ExecutionStatus.REJECTED
     assert result.message == "Timeframe must be positive"
+
+def test_dry_run_executor_rejects_invalid_direction():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction="invalid",
+        entry_price=100.0,
+        stop_loss=99.0,
+        take_profit=102.0,
+        risk_distance=1.0,
+        orderblock_index=10,
+    )
+
+    executor = DryRunExecutor()
+
+    result = executor.execute(plan)
+
+    assert result.status == ExecutionStatus.REJECTED
+    assert result.message == "Invalid trade direction"    

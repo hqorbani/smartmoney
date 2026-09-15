@@ -68,6 +68,13 @@ class DryRunExecutor(TradeExecutor):
                 message="Timeframe must be positive",
                 position_size_plan=self.position_size_plan,
             )
+        if not isinstance(plan.direction, TradeDirection):
+            return ExecutionResult(
+                status=ExecutionStatus.REJECTED,
+                plan=plan,
+                message="Invalid trade direction",
+                position_size_plan=self.position_size_plan,
+            )
         if plan.risk_distance <= 0:
             return ExecutionResult(
                 status=ExecutionStatus.REJECTED,
