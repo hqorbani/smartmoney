@@ -1,3 +1,4 @@
+import pytest
 from smartmoney.models.position_size import PositionSizePlan
 from smartmoney.trading.trade_plan import (
     TradeDirection,
@@ -412,3 +413,125 @@ def test_dry_run_executor_accepts_same_direction_on_different_timeframe():
     assert result.status == ExecutionStatus.DRY_RUN
     assert result.plan == plan
     assert result.message == "Dry-run order accepted"
+
+def test_dry_run_executor_rejects_when_symbol_open_trade_limit_reached():
+    existing_plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=5,
+        direction=TradeDirection.SELL,
+        entry_price=29442.3,
+        stop_loss=29444.6,
+        take_profit=29437.7,
+        risk_distance=2.3,
+        orderblock_index=22,
+    )
+
+    executor = DryRunExecutor(
+        open_trades=[existing_plan],
+        max_open_trades_per_symbol=1,
+    )
+
+    result = executor.execute(plan)
+
+    assert result.status == ExecutionStatus.REJECTED
+    assert result.plan == plan
+    assert result.message == "Maximum open trades reached for symbol"
+
+
+def test_dry_run_executor_allows_different_symbol():
+    existing_plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    plan = TradePlan(
+        symbol="XAUUSD",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=2500.0,
+        stop_loss=2498.0,
+        take_profit=2504.0,
+        risk_distance=2.0,
+        orderblock_index=22,
+    )
+
+    executor = DryRunExecutor(
+        open_trades=[existing_plan],
+        max_open_trades_per_symbol=1,
+    )
+
+    result = executor.execute(plan)
+
+    assert result.status == ExecutionStatus.DRY_RUN
+    assert result.plan == plan
+    assert result.message == "Dry-run order accepted"
+
+
+def test_dry_run_executor_allows_multiple_trades_up_to_symbol_limit():
+    existing_plan_1 = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    existing_plan_2 = TradePlan(
+        symbol="NAS100",
+        timeframe=5,
+        direction=TradeDirection.SELL,
+        entry_price=29442.3,
+        stop_loss=29444.6,
+        take_profit=29437.7,
+        risk_distance=2.3,
+        orderblock_index=22,
+    )
+
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=15,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=23,
+    )
+
+    executor = DryRunExecutor(
+        open_trades=[existing_plan_1, existing_plan_2],
+        max_open_trades_per_symbol=3,
+    )
+
+    result = executor.execute(plan)
+
+    assert result.status == ExecutionStatus.DRY_RUN
+    assert result.plan == plan
+    assert result.message == "Dry-run order accepted"
+
+def test_dry_run_executor_rejects_invalid_max_open_trades_per_symbol():
+    with pytest.raises(ValueError):
+        DryRunExecutor(max_open_trades_per_symbol=0)
+
+    with pytest.raises(ValueError):
+        DryRunExecutor(max_open_trades_per_symbol=-1)    

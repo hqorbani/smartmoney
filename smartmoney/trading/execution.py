@@ -40,9 +40,18 @@ class DryRunExecutor(TradeExecutor):
         self,
         position_size_plan: PositionSizePlan | None = None,
         open_trades: list[TradePlan] | None = None,
+        max_open_trades_per_symbol: int | None = None,
     ) -> None:
         self.position_size_plan = position_size_plan
         self.open_trades = open_trades or []
+        self.max_open_trades_per_symbol = max_open_trades_per_symbol
+        if (
+            self.max_open_trades_per_symbol is not None
+            and self.max_open_trades_per_symbol <= 0
+        ):
+            raise ValueError(
+                "max_open_trades_per_symbol must be positive"
+            )
 
     def execute(self, plan: TradePlan) -> ExecutionResult:
         if plan.risk_distance <= 0:
@@ -61,6 +70,20 @@ class DryRunExecutor(TradeExecutor):
                     status=ExecutionStatus.REJECTED,
                     plan=plan,
                     message="Duplicate trade",
+                    position_size_plan=self.position_size_plan,
+                )
+        if self.max_open_trades_per_symbol is not None:
+            symbol_open_trades = sum(
+                1
+                for open_trade in self.open_trades
+                if open_trade.symbol == plan.symbol
+            )
+
+            if symbol_open_trades >= self.max_open_trades_per_symbol:
+                return ExecutionResult(
+                    status=ExecutionStatus.REJECTED,
+                    plan=plan,
+                    message="Maximum open trades reached for symbol",
                     position_size_plan=self.position_size_plan,
                 )
         if (
