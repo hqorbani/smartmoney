@@ -208,4 +208,118 @@ def test_dry_run_executor_stores_position_size_plan():
     assert result.status == ExecutionStatus.DRY_RUN
     assert result.plan == plan
     assert result.position_size_plan == position_size_plan
+
+def test_dry_run_executor_rejects_non_positive_position_size():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    position_size_plan = PositionSizePlan(
+        balance=10000.0,
+        risk_percent=1.0,
+        risk_amount=100.0,
+        stop_distance=2.3,
+        position_size=0.0,
+    )
+
+    executor = DryRunExecutor(
+        position_size_plan=position_size_plan,
+    )
+
+    result = executor.execute(plan)
+
+    assert result.status == ExecutionStatus.REJECTED
+    assert result.plan == plan
+    assert result.position_size_plan == position_size_plan
+    assert result.message == "Position size must be positive"
+
+def test_dry_run_executor_accepts_plan_without_position_size():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    executor = DryRunExecutor()
+
+    result = executor.execute(plan)
+
+    assert result.status == ExecutionStatus.DRY_RUN
+    assert result.plan == plan
+    assert result.position_size_plan is None
+    assert result.message == "Dry-run order accepted"
+
+def test_dry_run_executor_rejects_non_positive_risk_amount():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    position_size_plan = PositionSizePlan(
+        balance=10000.0,
+        risk_percent=1.0,
+        risk_amount=0.0,
+        stop_distance=2.3,
+        position_size=43.47826087,
+    )
+
+    executor = DryRunExecutor(
+        position_size_plan=position_size_plan,
+    )
+
+    result = executor.execute(plan)
+
+    assert result.status == ExecutionStatus.REJECTED
+    assert result.plan == plan
+    assert result.position_size_plan == position_size_plan
+    assert result.message == "Risk amount must be positive"
+
+def test_dry_run_executor_rejects_non_positive_stop_distance():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    position_size_plan = PositionSizePlan(
+        balance=10000.0,
+        risk_percent=1.0,
+        risk_amount=100.0,
+        stop_distance=0.0,
+        position_size=43.47826087,
+    )
+
+    executor = DryRunExecutor(
+        position_size_plan=position_size_plan,
+    )
+
+    result = executor.execute(plan)
+
+    assert result.status == ExecutionStatus.REJECTED
+    assert result.plan == plan
+    assert result.position_size_plan == position_size_plan
+    assert result.message == "Stop distance must be positive"
         

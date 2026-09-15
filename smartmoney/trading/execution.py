@@ -49,6 +49,36 @@ class DryRunExecutor(TradeExecutor):
                 plan=plan,
                 message="Trade plan risk must be positive",
             )
+        if (
+            self.position_size_plan is not None
+            and self.position_size_plan.position_size <= 0
+        ):
+            return ExecutionResult(
+                status=ExecutionStatus.REJECTED,
+                plan=plan,
+                message="Position size must be positive",
+                position_size_plan=self.position_size_plan,
+            )
+        if (
+            self.position_size_plan is not None
+            and self.position_size_plan.risk_amount <= 0
+        ):
+            return ExecutionResult(
+                status=ExecutionStatus.REJECTED,
+                plan=plan,
+                message="Risk amount must be positive",
+                position_size_plan=self.position_size_plan,
+            )
+        if (
+            self.position_size_plan is not None
+            and self.position_size_plan.stop_distance <= 0
+        ):
+            return ExecutionResult(
+                status=ExecutionStatus.REJECTED,
+                plan=plan,
+                message="Stop distance must be positive",
+                position_size_plan=self.position_size_plan,
+            )
 
         if plan.direction == TradeDirection.BUY:
             if not (
