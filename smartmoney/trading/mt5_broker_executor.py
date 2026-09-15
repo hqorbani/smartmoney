@@ -30,6 +30,14 @@ class MT5BrokerExecutor(BrokerExecutor):
                 "Success retcode must be positive"
             )
         self.success_retcode = success_retcode
+    def initialize(self) -> bool:
+        return self.mt5_client.initialize()
+
+    def shutdown(self) -> bool:
+        return self.mt5_client.shutdown()
+
+    def shutdown(self) -> bool:
+        return self.mt5_client.shutdown()
 
     def execute(
         self,

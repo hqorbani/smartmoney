@@ -2,6 +2,10 @@ from smartmoney.trading.execution import ExecutionResult, ExecutionStatus
 from smartmoney.trading.mt5_broker_executor import MT5BrokerExecutor
 from smartmoney.trading.trade_plan import TradeDirection, TradePlan
 import pytest
+from smartmoney.trading.trade_plan import (
+    TradeDirection,
+    TradePlan,
+)
 
 def test_mt5_broker_executor_returns_executed_result():
     plan = TradePlan(
@@ -334,3 +338,98 @@ def test_mt5_broker_executor_rejects_non_positive_success_retcode():
             FakeMT5Client(),
             success_retcode=0,
         )
+
+def test_mt5_broker_executor_initializes_mt5_client():
+    from smartmoney.trading.mt5_broker_executor import MT5BrokerExecutor
+
+    class FakeMT5Client:
+        def __init__(self):
+            self.initialized = False
+
+        def initialize(self):
+            self.initialized = True
+            return True
+
+    client = FakeMT5Client()
+
+    executor = MT5BrokerExecutor(client)
+
+    assert executor.initialize() is True
+    assert client.initialized is True
+
+def test_mt5_broker_executor_returns_false_when_initialization_fails():
+    from smartmoney.trading.mt5_broker_executor import MT5BrokerExecutor
+
+    class FakeMT5Client:
+        def initialize(self):
+            return False
+
+    executor = MT5BrokerExecutor(
+        FakeMT5Client(),
+    )
+
+    assert executor.initialize() is False
+
+def test_mt5_broker_executor_shuts_down_mt5_client():
+    from smartmoney.trading.mt5_broker_executor import MT5BrokerExecutor
+
+    class FakeMT5Client:
+        def __init__(self):
+            self.shutdown_called = False
+
+        def shutdown(self):
+            self.shutdown_called = True
+            return True
+
+    client = FakeMT5Client()
+
+    executor = MT5BrokerExecutor(client)
+
+    assert executor.shutdown() is True
+    assert client.shutdown_called is True
+
+def test_mt5_broker_executor_uses_client_send_order():
+    from smartmoney.trading.mt5_broker_executor import MT5BrokerExecutor
+    from smartmoney.trading.execution import ExecutionStatus
+
+    class FakeMT5Client:
+        def __init__(self):
+            self.requests = []
+
+        def send_order(self, request):
+            self.requests.append(request)
+            return {
+                "retcode": 10009,
+                "comment": "done",
+            }
+
+    client = FakeMT5Client()
+
+    executor = MT5BrokerExecutor(
+        client,
+    )
+
+    plan = TradePlan(
+        symbol="EURUSD",
+        timeframe=15,
+        direction=TradeDirection.BUY,
+        entry_price=1.1000,
+        stop_loss=1.0950,
+        take_profit=1.1100,
+        risk_distance=0.0050,
+        orderblock_index=10,
+    )
+
+    result = executor.execute(plan)
+
+    assert result.status == ExecutionStatus.EXECUTED
+    assert len(client.requests) == 1
+
+def test_mt5_broker_executor_can_use_mt5_client():
+    from smartmoney.trading.mt5_broker_executor import MT5BrokerExecutor
+    from smartmoney.trading.mt5_client import MT5Client
+
+    client = MT5Client()
+    executor = MT5BrokerExecutor(client)
+
+    assert executor.mt5_client is client                       
