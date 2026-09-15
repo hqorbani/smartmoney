@@ -39,8 +39,10 @@ class DryRunExecutor(TradeExecutor):
     def __init__(
         self,
         position_size_plan: PositionSizePlan | None = None,
+        open_trades: list[TradePlan] | None = None,
     ) -> None:
         self.position_size_plan = position_size_plan
+        self.open_trades = open_trades or []
 
     def execute(self, plan: TradePlan) -> ExecutionResult:
         if plan.risk_distance <= 0:
@@ -49,6 +51,18 @@ class DryRunExecutor(TradeExecutor):
                 plan=plan,
                 message="Trade plan risk must be positive",
             )
+        for open_trade in self.open_trades:
+            if (
+                open_trade.symbol == plan.symbol
+                and open_trade.timeframe == plan.timeframe
+                and open_trade.direction == plan.direction
+            ):
+                return ExecutionResult(
+                    status=ExecutionStatus.REJECTED,
+                    plan=plan,
+                    message="Duplicate trade",
+                    position_size_plan=self.position_size_plan,
+                )
         if (
             self.position_size_plan is not None
             and self.position_size_plan.position_size <= 0

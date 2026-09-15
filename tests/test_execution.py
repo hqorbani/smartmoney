@@ -322,4 +322,93 @@ def test_dry_run_executor_rejects_non_positive_stop_distance():
     assert result.plan == plan
     assert result.position_size_plan == position_size_plan
     assert result.message == "Stop distance must be positive"
-        
+
+
+def test_dry_run_executor_rejects_duplicate_open_trade():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    executor = DryRunExecutor(
+        open_trades=[plan],
+    )
+
+    result = executor.execute(plan)
+
+    assert result.status == ExecutionStatus.REJECTED
+    assert result.plan == plan
+    assert result.message == "Duplicate trade"
+
+
+def test_dry_run_executor_accepts_opposite_direction():
+    existing_plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.SELL,
+        entry_price=29442.3,
+        stop_loss=29444.6,
+        take_profit=29437.7,
+        risk_distance=2.3,
+        orderblock_index=22,
+    )
+
+    executor = DryRunExecutor(
+        open_trades=[existing_plan],
+    )
+
+    result = executor.execute(plan)
+
+    assert result.status == ExecutionStatus.DRY_RUN
+    assert result.plan == plan
+    assert result.message == "Dry-run order accepted"
+
+def test_dry_run_executor_accepts_same_direction_on_different_timeframe():
+    existing_plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=5,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=22,
+    )
+
+    executor = DryRunExecutor(
+        open_trades=[existing_plan],
+    )
+
+    result = executor.execute(plan)
+
+    assert result.status == ExecutionStatus.DRY_RUN
+    assert result.plan == plan
+    assert result.message == "Dry-run order accepted"
