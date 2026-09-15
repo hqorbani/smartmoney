@@ -23,6 +23,11 @@ class TradePosition:
     status: PositionStatus = PositionStatus.OPEN
 
     def close(self) -> "TradePosition":
+        if self.status == PositionStatus.CLOSED:
+            raise ValueError(
+                "Trade position is already closed"
+            )
+
         return TradePosition(
             plan=self.plan,
             size=self.size,
