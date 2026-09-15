@@ -61,6 +61,13 @@ class DryRunExecutor(TradeExecutor):
                 message="Symbol must not be empty",
                 position_size_plan=self.position_size_plan,
             )
+        if plan.timeframe <= 0:
+            return ExecutionResult(
+                status=ExecutionStatus.REJECTED,
+                plan=plan,
+                message="Timeframe must be positive",
+                position_size_plan=self.position_size_plan,
+            )
         if plan.risk_distance <= 0:
             return ExecutionResult(
                 status=ExecutionStatus.REJECTED,
