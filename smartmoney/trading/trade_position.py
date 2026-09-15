@@ -21,15 +21,22 @@ class TradePosition:
     plan: TradePlan
     size: float
     status: PositionStatus = PositionStatus.OPEN
+    exit_price: float | None = None
 
-    def close(self) -> "TradePosition":
+    def close(self, exit_price: float) -> "TradePosition":
         if self.status == PositionStatus.CLOSED:
             raise ValueError(
                 "Trade position is already closed"
+            )
+
+        if exit_price <= 0:
+            raise ValueError(
+                "Exit price must be positive"
             )
 
         return TradePosition(
             plan=self.plan,
             size=self.size,
             status=PositionStatus.CLOSED,
+            exit_price=exit_price,
         )

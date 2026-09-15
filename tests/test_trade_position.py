@@ -60,7 +60,7 @@ def test_trade_position_can_be_closed():
         size=43.47826087,
     )
 
-    closed_position = position.close()
+    closed_position = position.close(exit_price=29446.2)
 
     assert position.status == PositionStatus.OPEN
     assert closed_position.status == PositionStatus.CLOSED
@@ -105,10 +105,34 @@ def test_closed_trade_position_cannot_be_closed_again():
         size=43.47826087,
     )
 
-    closed_position = position.close()
+    closed_position = position.close(exit_price=29446.2)
 
     with pytest.raises(
         ValueError,
         match="Trade position is already closed",
     ):
-        closed_position.close()    
+        closed_position.close(exit_price=29446.2)
+
+def test_closed_trade_position_stores_exit_price():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    position = TradePosition(
+        plan=plan,
+        size=43.47826087,
+    )
+
+    closed_position = position.close(exit_price=29446.2)
+
+    assert closed_position.status == PositionStatus.CLOSED
+    assert closed_position.plan == position.plan
+    assert closed_position.size == position.size
+    assert closed_position.exit_price == 29446.2        
