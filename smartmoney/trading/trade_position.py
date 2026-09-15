@@ -8,6 +8,10 @@ class PositionStatus(Enum):
     OPEN = "open"
     CLOSED = "closed"
 
+class ExitReason(Enum):
+    TAKE_PROFIT = "take_profit"
+    STOP_LOSS = "stop_loss"
+    MANUAL = "manual"
 
 @dataclass(frozen=True, slots=True)
 class TradePosition:
@@ -22,12 +26,12 @@ class TradePosition:
     size: float
     status: PositionStatus = PositionStatus.OPEN
     exit_price: float | None = None
-    exit_reason: str | None = None
+    exit_reason: ExitReason | None = None
 
     def close(
         self,
         exit_price: float,
-        exit_reason: str,
+        exit_reason: ExitReason,
     ) -> "TradePosition":
         if self.status == PositionStatus.CLOSED:
             raise ValueError(
@@ -42,6 +46,11 @@ class TradePosition:
         if not exit_reason:
             raise ValueError(
                 "Exit reason must not be empty"
+            )
+
+        if not isinstance(exit_reason, ExitReason):
+            raise ValueError(
+                "Invalid exit reason"
             )
 
         return TradePosition(

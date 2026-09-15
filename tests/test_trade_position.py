@@ -1,8 +1,10 @@
 import pytest
 from smartmoney.trading.trade_plan import TradeDirection, TradePlan
-from smartmoney.trading.trade_position import TradePosition
-from smartmoney.trading.trade_position import PositionStatus
-
+from smartmoney.trading.trade_position import (
+    ExitReason,
+    PositionStatus,
+    TradePosition,
+)
 
 def test_trade_position_stores_open_trade_state():
     plan = TradePlan(
@@ -62,7 +64,7 @@ def test_trade_position_can_be_closed():
 
     closed_position = position.close(
     exit_price=29446.2,
-    exit_reason="TAKE_PROFIT",
+    exit_reason=ExitReason.TAKE_PROFIT,
 )
 
     assert position.status == PositionStatus.OPEN
@@ -110,7 +112,7 @@ def test_closed_trade_position_cannot_be_closed_again():
 
     closed_position = position.close(
     exit_price=29446.2,
-    exit_reason="TAKE_PROFIT",
+    exit_reason=ExitReason.TAKE_PROFIT,
 )
 
     with pytest.raises(
@@ -119,7 +121,7 @@ def test_closed_trade_position_cannot_be_closed_again():
     ):
         closed_position.close(
             exit_price=29446.2,
-            exit_reason="TAKE_PROFIT",
+            exit_reason=ExitReason.TAKE_PROFIT,
         )
 
 def test_closed_trade_position_stores_exit_price():
@@ -141,7 +143,7 @@ def test_closed_trade_position_stores_exit_price():
 
     closed_position = position.close(
     exit_price=29446.2,
-    exit_reason="TAKE_PROFIT",
+    exit_reason=ExitReason.TAKE_PROFIT,
 )
 
     assert closed_position.status == PositionStatus.CLOSED
@@ -168,12 +170,12 @@ def test_closed_trade_position_stores_exit_reason():
 
     closed_position = position.close(
         exit_price=29446.2,
-        exit_reason="TAKE_PROFIT",
+        exit_reason=ExitReason.TAKE_PROFIT,
     )
 
     assert closed_position.status == PositionStatus.CLOSED
     assert closed_position.exit_price == 29446.2
-    assert closed_position.exit_reason == "TAKE_PROFIT"
+    assert closed_position.exit_reason == ExitReason.TAKE_PROFIT
 
 def test_trade_position_cannot_be_closed_without_exit_reason():
     plan = TradePlan(
@@ -199,4 +201,54 @@ def test_trade_position_cannot_be_closed_without_exit_reason():
         position.close(
             exit_price=29446.2,
             exit_reason="",
-        )    
+        )
+
+def test_trade_position_uses_exit_reason_enum():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    position = TradePosition(
+        plan=plan,
+        size=43.47826087,
+    )
+
+    closed_position = position.close(
+        exit_price=29446.2,
+        exit_reason=ExitReason.TAKE_PROFIT,
+    )
+
+    assert closed_position.exit_reason == ExitReason.TAKE_PROFIT     
+
+def test_trade_position_rejects_string_exit_reason():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    position = TradePosition(
+        plan=plan,
+        size=43.47826087,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Invalid exit reason",
+    ):
+        position.close(
+            exit_price=29446.2,
+            exit_reason="TAKE_PROFIT",
+        )       
