@@ -251,4 +251,71 @@ def test_trade_position_rejects_string_exit_reason():
         position.close(
             exit_price=29446.2,
             exit_reason="TAKE_PROFIT",
-        )       
+        )
+
+def test_closed_trade_position_calculates_positive_pnl_for_buy():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    position = TradePosition(
+        plan=plan,
+        size=2.0,
+    )
+
+    closed_position = position.close(
+        exit_price=29446.3,
+        exit_reason=ExitReason.TAKE_PROFIT,
+    )
+
+    assert closed_position.pnl == 8.0
+
+def test_closed_trade_position_calculates_positive_pnl_for_sell():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.SELL,
+        entry_price=29442.3,
+        stop_loss=29444.6,
+        take_profit=29437.7,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    position = TradePosition(
+        plan=plan,
+        size=2.0,
+    )
+
+    closed_position = position.close(
+        exit_price=29438.3,
+        exit_reason=ExitReason.TAKE_PROFIT,
+    )
+
+    assert closed_position.pnl == 8.0
+
+def test_open_trade_position_has_no_pnl():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    position = TradePosition(
+        plan=plan,
+        size=2.0,
+    )
+
+    assert position.pnl is None    

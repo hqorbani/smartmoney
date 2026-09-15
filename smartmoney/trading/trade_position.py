@@ -1,7 +1,10 @@
 from dataclasses import dataclass
 from enum import Enum
 
-from smartmoney.trading.trade_plan import TradePlan
+from smartmoney.trading.trade_plan import (
+    TradeDirection,
+    TradePlan,
+)
 
 
 class PositionStatus(Enum):
@@ -27,7 +30,23 @@ class TradePosition:
     status: PositionStatus = PositionStatus.OPEN
     exit_price: float | None = None
     exit_reason: ExitReason | None = None
+    @property
+    def pnl(self) -> float | None:
+        if self.status != PositionStatus.CLOSED:
+            return None
 
+        if self.exit_price is None:
+            return None
+
+        price_difference = (
+            self.exit_price - self.plan.entry_price
+        )
+
+        if self.plan.direction == TradeDirection.SELL:
+            price_difference = -price_difference
+
+        return price_difference * self.size
+    
     def close(
         self,
         exit_price: float,
