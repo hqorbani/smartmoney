@@ -1,3 +1,4 @@
+from smartmoney.trading.trade_position import TradePosition, PositionStatus
 import pytest
 from smartmoney.models.position_size import PositionSizePlan
 from smartmoney.trading.trade_plan import (
@@ -610,4 +611,85 @@ def test_dry_run_executor_rejects_invalid_direction():
     result = executor.execute(plan)
 
     assert result.status == ExecutionStatus.REJECTED
-    assert result.message == "Invalid trade direction"    
+    assert result.message == "Invalid trade direction"
+
+def test_successful_execution_result_can_create_trade_position():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    position_size_plan = PositionSizePlan(
+        balance=10000.0,
+        risk_percent=1.0,
+        risk_amount=100.0,
+        stop_distance=2.3,
+        position_size=43.47826087,
+    )
+
+    result = ExecutionResult(
+        status=ExecutionStatus.DRY_RUN,
+        plan=plan,
+        message="Dry-run order accepted",
+        position_size_plan=position_size_plan,
+    )
+
+    position = result.to_position()
+
+    assert position.status == PositionStatus.OPEN
+    assert position.plan == plan
+    assert position.size == position_size_plan.position_size
+
+def test_rejected_execution_result_cannot_create_trade_position():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    result = ExecutionResult(
+        status=ExecutionStatus.REJECTED,
+        plan=plan,
+        message="Trade plan risk must be positive",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Only successful execution results can create a position",
+    ):
+        result.to_position()
+
+def test_execution_result_without_position_size_cannot_create_trade_position():
+    plan = TradePlan(
+        symbol="NAS100",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=29442.3,
+        stop_loss=29440.0,
+        take_profit=29446.9,
+        risk_distance=2.3,
+        orderblock_index=21,
+    )
+
+    result = ExecutionResult(
+        status=ExecutionStatus.DRY_RUN,
+        plan=plan,
+        message="Dry-run order accepted",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Position size plan is required to create a position",
+    ):
+        result.to_position()        

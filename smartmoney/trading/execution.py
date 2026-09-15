@@ -1,3 +1,4 @@
+from smartmoney.trading.trade_position import TradePosition
 from smartmoney.models.position_size import PositionSizePlan
 from dataclasses import dataclass
 from enum import Enum
@@ -18,6 +19,21 @@ class ExecutionResult:
     message: str
     position_size_plan: PositionSizePlan | None = None
 
+    def to_position(self) -> TradePosition:
+        if self.status != ExecutionStatus.DRY_RUN:
+            raise ValueError(
+                "Only successful execution results can create a position"
+            )
+
+        if self.position_size_plan is None:
+            raise ValueError(
+                "Position size plan is required to create a position"
+            )
+
+        return TradePosition(
+            plan=self.plan,
+            size=self.position_size_plan.position_size,
+        )
 from abc import ABC, abstractmethod
 
 class TradeExecutor(ABC):
