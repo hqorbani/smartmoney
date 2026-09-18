@@ -6,6 +6,7 @@ from smartmoney.trading.trade_plan import (
     TradeDirection,
     TradePlan,
 )
+import MetaTrader5 as mt5
 
 def test_mt5_broker_executor_returns_executed_result():
     plan = TradePlan(
@@ -432,4 +433,149 @@ def test_mt5_broker_executor_can_use_mt5_client():
     client = MT5Client()
     executor = MT5BrokerExecutor(client)
 
-    assert executor.mt5_client is client                       
+    assert executor.mt5_client is client
+
+def test_executor_builds_real_mt5_request():
+    from smartmoney.trading.mt5_broker_executor import (
+        MT5BrokerExecutor,
+    )
+    from smartmoney.trading.trade_plan import (
+        TradeDirection,
+        TradePlan,
+    )
+
+    class FakeMT5Client:
+        def __init__(self):
+            self.received_request = None
+        def market_price(self, symbol):
+            return {
+                "bid": 1.15400,
+                "ask": 1.15420,
+            }
+
+        def send_order(self, request):
+            self.received_request = request
+            return True
+
+    client = FakeMT5Client()
+
+    executor = MT5BrokerExecutor(
+        mt5_client=client,
+        volume=0.01,
+        use_real_request=True,
+    )
+
+    plan = TradePlan(
+        symbol="EURUSD",
+        timeframe=15,
+        direction=TradeDirection.BUY,
+        entry_price=1.15411,
+        stop_loss=1.15300,
+        take_profit=1.15600,
+        risk_distance=0.00111,
+        orderblock_index=10,
+    )
+
+    result = executor.execute(plan)
+
+    assert result.status.value == "executed"
+    assert client.received_request is not None
+    assert client.received_request["action"] > 0
+    assert client.received_request["symbol"] == "EURUSD"
+    assert client.received_request["volume"] == 0.01
+    assert client.received_request["price"] == 1.15420
+    assert client.received_request["sl"] == 1.15300
+    assert client.received_request["tp"] == 1.15600
+
+def test_executor_uses_market_price_for_real_request():
+    from smartmoney.trading.mt5_broker_executor import (
+        MT5BrokerExecutor,
+    )
+    from smartmoney.trading.trade_plan import (
+        TradeDirection,
+        TradePlan,
+    )
+
+    class FakeMT5Client:
+        def __init__(self):
+            self.received_request = None
+
+        def market_price(self, symbol):
+            assert symbol == "EURUSD"
+
+            return {
+                "bid": 1.15400,
+                "ask": 1.15420,
+            }
+
+        def send_order(self, request):
+            self.received_request = request
+            return True
+
+    client = FakeMT5Client()
+
+    executor = MT5BrokerExecutor(
+        mt5_client=client,
+        volume=0.01,
+        use_real_request=True,
+    )
+
+    plan = TradePlan(
+        symbol="EURUSD",
+        timeframe=15,
+        direction=TradeDirection.BUY,
+        entry_price=1.15411,
+        stop_loss=1.15300,
+        take_profit=1.15600,
+        risk_distance=0.00111,
+        orderblock_index=10,
+    )
+
+    result = executor.execute(plan)
+
+    assert result.status.value == "executed"
+    assert client.received_request is not None
+    assert client.received_request["price"] == 1.15420
+
+def test_executor_uses_bid_price_for_real_sell_request():
+    class FakeMT5Client:
+        def __init__(self):
+            self.received_request = None
+
+        def market_price(self, symbol):
+            return {
+                "bid": 1.15400,
+                "ask": 1.15420,
+            }
+
+        def send_order(self, request):
+            self.received_request = request
+            return {
+                "retcode": 10009,
+                "comment": "Done",
+            }
+
+    client = FakeMT5Client()
+
+    executor = MT5BrokerExecutor(
+        mt5_client=client,
+        volume=1.0,
+        use_real_request=True,
+    )
+
+    plan = TradePlan(
+        symbol="EURUSD",
+        timeframe=15,
+        direction=TradeDirection.SELL,
+        entry_price=1.15400,
+        stop_loss=1.15500,
+        take_profit=1.15300,
+        risk_distance=0.00100,
+        orderblock_index=10,
+    )
+
+    result = executor.execute(plan)
+
+    assert result.status == ExecutionStatus.EXECUTED
+    assert client.received_request["price"] == 1.15400
+    assert client.received_request["type"] == mt5.ORDER_TYPE_SELL

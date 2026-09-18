@@ -6,6 +6,7 @@ from smartmoney.trading.trade_plan import TradePlan
 from smartmoney.trading.broker_executor import BrokerExecutor
 from smartmoney.trading.mt5_order_request import (
     build_mt5_order_request,
+    build_real_mt5_order_request,
 )
 
 
@@ -22,9 +23,11 @@ class MT5BrokerExecutor(BrokerExecutor):
         mt5_client,
         volume: float = 1.0,
         success_retcode: int = 10009,
+        use_real_request: bool = False,
     ) -> None:
         self.mt5_client = mt5_client
         self.volume = volume
+        self.use_real_request = use_real_request
         if success_retcode <= 0:
             raise ValueError(
                 "Success retcode must be positive"
@@ -44,10 +47,26 @@ class MT5BrokerExecutor(BrokerExecutor):
         plan: TradePlan,
     ) -> ExecutionResult:
         try:
-            request = build_mt5_order_request(
-                plan=plan,
-                volume=self.volume,
-            )
+            if self.use_real_request:
+                market_price = self.mt5_client.market_price(
+                    plan.symbol,
+                )
+
+                if plan.direction.value == "buy":
+                    price = market_price["ask"]
+                else:
+                    price = market_price["bid"]
+
+                request = build_real_mt5_order_request(
+                    plan=plan,
+                    volume=self.volume,
+                    price=price,
+                )
+            else:
+                request = build_mt5_order_request(
+                    plan=plan,
+                    volume=self.volume,
+                )
 
             success = self.mt5_client.send_order(request)
         except Exception as exc:
