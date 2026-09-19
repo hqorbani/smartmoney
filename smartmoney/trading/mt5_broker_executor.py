@@ -8,7 +8,7 @@ from smartmoney.trading.mt5_order_request import (
     build_mt5_order_request,
     build_real_mt5_order_request,
 )
-
+from smartmoney.trading.mt5_volume import calculate_mt5_volume
 
 class MT5BrokerExecutor(BrokerExecutor):
     """
@@ -24,9 +24,15 @@ class MT5BrokerExecutor(BrokerExecutor):
         volume: float = 1.0,
         success_retcode: int = 10009,
         use_real_request: bool = False,
+        position_size_plan=None,
     ) -> None:
         self.mt5_client = mt5_client
-        self.volume = volume
+        self.volume = (
+            position_size_plan.position_size
+            if position_size_plan is not None
+            else volume
+        )
+        self.position_size_plan = position_size_plan
         self.use_real_request = use_real_request
         if success_retcode <= 0:
             raise ValueError(
@@ -55,17 +61,42 @@ class MT5BrokerExecutor(BrokerExecutor):
                     price = market_price["bid"]
 
                 symbol_info = self.mt5_client.symbol_info(plan.symbol)
-
+                if self.position_size_plan is not None:
+                    volume = calculate_mt5_volume(
+                        risk_amount=self.position_size_plan.risk_amount,
+                        stop_distance=self.position_size_plan.stop_distance,
+                        trade_tick_value=symbol_info.trade_tick_value,
+                        trade_tick_size=symbol_info.trade_tick_size,
+                        volume_step=symbol_info.volume_step,
+                        volume_min=symbol_info.volume_min,
+                        volume_max=symbol_info.volume_max,
+                    )
+                else:
+                    volume = self.volume
                 request = build_real_mt5_order_request(
                     plan=plan,
-                    volume=self.volume,
+                    volume=volume,
                     price=price,
                     type_filling=0 if symbol_info.filling_mode & 1 else 1,
                 )
             else:
+                volume = self.volume
+
+                if self.position_size_plan is not None:
+                    symbol_info = self.mt5_client.symbol_info(plan.symbol)
+                    volume = calculate_mt5_volume(
+                        risk_amount=self.position_size_plan.risk_amount,
+                        stop_distance=self.position_size_plan.stop_distance,
+                        trade_tick_value=symbol_info.trade_tick_value,
+                        trade_tick_size=symbol_info.trade_tick_size,
+                        volume_step=symbol_info.volume_step,
+                        volume_min=symbol_info.volume_min,
+                        volume_max=symbol_info.volume_max,
+                    )
+
                 request = build_mt5_order_request(
                     plan=plan,
-                    volume=self.volume,
+                    volume=volume,
                 )
             check_result = self.mt5_client.order_check(request)
 

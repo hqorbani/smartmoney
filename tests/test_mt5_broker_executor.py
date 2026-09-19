@@ -807,3 +807,58 @@ def test_executor_uses_symbol_filling_mode():
     print(result)
 
     assert client.sent_request["type_filling"] == 0
+def test_mt5_broker_executor_uses_position_size_plan_for_volume():
+    from smartmoney.models.position_size import PositionSizePlan
+
+    plan = TradePlan(
+        symbol="ETHEREUM",
+        timeframe=1,
+        direction=TradeDirection.BUY,
+        entry_price=2635.1,
+        stop_loss=2625.1,
+        take_profit=2655.1,
+        risk_distance=10.0,
+        orderblock_index=21,
+    )
+
+    position_size_plan = PositionSizePlan(
+        balance=100.0,
+        risk_percent=1.0,
+        risk_amount=1.0,
+        stop_distance=10.0,
+        position_size=0.03,
+    )
+
+    class FakeMT5Client:
+        def __init__(self):
+            self.received_request = None
+        def symbol_info(self, symbol):
+            return type(
+                "SymbolInfo",
+                (),
+                {
+                    "trade_tick_value": 0.05,
+                    "trade_tick_size": 0.01,
+                    "volume_step": 0.01,
+                    "volume_min": 0.01,
+                    "volume_max": 300.0,
+                },
+            )()
+        def order_check(self, request):
+            return {"retcode": 10009, "comment": "Done"}
+
+        def send_order(self, request):
+            self.received_request = request
+            return True
+
+    client = FakeMT5Client()
+
+    executor = MT5BrokerExecutor(
+        client,
+        position_size_plan=position_size_plan,
+    )
+
+    result = executor.execute(plan)
+
+    assert result.status == ExecutionStatus.EXECUTED
+    assert client.received_request["volume"] == 0.02
