@@ -267,6 +267,7 @@ class Scheduler:
             queried_signals,
         )
         if self.executor is not None:
+            executed_this_cycle = False
             for signal in queried_signals:
                 trade_plan = getattr(signal, "trade_plan", None)
                 position_size_plan = getattr(signal, "position_size_plan", None)
@@ -283,6 +284,8 @@ class Scheduler:
                     trade_plan.direction.value,
                     trade_plan.orderblock_index,
                 )
+                if executed_this_cycle:
+                    break
 
                 if trade_key in self._executed_trade_keys:
                     continue
@@ -297,6 +300,7 @@ class Scheduler:
 
                 if result.status == ExecutionStatus.EXECUTED:
                     self._executed_trade_keys.add(trade_key)
+                    executed_this_cycle = True
                     print(
                         f"Demo execution: {trade_plan.symbol} "
                         f"{trade_plan.direction.value} "
