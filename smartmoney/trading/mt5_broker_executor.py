@@ -100,11 +100,18 @@ class MT5BrokerExecutor(BrokerExecutor):
                 )
             check_result = self.mt5_client.order_check(request)
 
-            if check_result["retcode"] != 0:
+            if isinstance(check_result, dict):
+                check_retcode = check_result.get("retcode")
+                check_comment = check_result.get("comment", "Order check failed")
+            else:
+                check_retcode = check_result.retcode
+                check_comment = check_result.comment or "Order check failed"
+
+            if check_retcode != 0:
                 return ExecutionResult(
                     status=ExecutionStatus.REJECTED,
                     plan=plan,
-                    message=check_result.get("comment", "Order check failed"),
+                    message=check_comment,
                 )
             success = self.mt5_client.send_order(request)
         except Exception as exc:
@@ -116,23 +123,22 @@ class MT5BrokerExecutor(BrokerExecutor):
 
         if isinstance(success, dict):
             retcode = success.get("retcode")
+            comment = success.get("comment", "MT5 order rejected")
+        elif hasattr(success, "retcode"):
+            retcode = success.retcode
+            comment = success.comment
+        elif success is True:
+            retcode = self.success_retcode
+            comment = "MT5 order executed"
+        else:
+            retcode = None
+            comment = "MT5 order rejected"
 
-            if retcode != self.success_retcode:
-                return ExecutionResult(
-                    status=ExecutionStatus.REJECTED,
-                    plan=plan,
-                    message=success.get(
-                        "comment",
-                        "MT5 order rejected",
-                    ),
-                    broker_result=success,
-                )
-
-        if not success:
+        if retcode != self.success_retcode:
             return ExecutionResult(
                 status=ExecutionStatus.REJECTED,
                 plan=plan,
-                message="MT5 order rejected",
+                message=comment,
                 broker_result=success,
             )
 
