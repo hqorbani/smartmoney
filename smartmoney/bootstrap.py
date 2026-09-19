@@ -30,7 +30,8 @@ from smartmoney.core.market_structure_engine import (
 from smartmoney.core.structure_event_engine import (
     StructureEventEngine,
 )
-
+from smartmoney.trading.mt5_client import MT5Client
+from smartmoney.trading.mt5_broker_executor import MT5BrokerExecutor
 # ==========================================================
 # Provider
 # ==========================================================
@@ -149,9 +150,19 @@ def create_live_scheduler() -> Scheduler:
         balance=provider.get_account_balance(),
         risk_percent=Config.RISK_PERCENT,
     )
+    executor = MT5BrokerExecutor(
+        mt5_client=MT5Client(),
+        use_real_request=True,
+    )
+    account = executor.mt5_client.account_info()
 
+    if account is None or "demo" not in account.server.lower():
+        raise RuntimeError(
+            f"Automatic execution requires a Demo MT5 account. "
+            f"Current server: {getattr(account, 'server', None)}"
+        )
     scheduler = Scheduler(
-
+        executor=executor,
         provider=provider,
 
         context_manager=create_context_manager(),
