@@ -15,6 +15,9 @@ class MT5Client:
     def send_order(self, request: dict):
         return mt5.order_send(request)
 
+    def order_check(self, request):
+        return mt5.order_check(request)
+
     def account_info(self):
         return mt5.account_info()
 

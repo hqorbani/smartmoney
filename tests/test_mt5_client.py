@@ -65,6 +65,35 @@ def test_mt5_client_sends_order(monkeypatch):
         "retcode": 10009,
     }
 
+def test_mt5_client_checks_order(monkeypatch):
+    from smartmoney.trading.mt5_client import MT5Client
+
+    expected = {
+        "retcode": 10009,
+        "comment": "Done",
+    }
+
+    class FakeMT5Module:
+        def order_check(self, request):
+            return expected
+
+    fake = FakeMT5Module()
+
+    monkeypatch.setattr(
+        mt5,
+        "order_check",
+        fake.order_check,
+    )
+
+    client = MT5Client()
+
+    request = {
+        "symbol": "EURUSD",
+        "volume": 0.01,
+    }
+
+    assert client.order_check(request) == expected
+    
 def test_mt5_client_returns_false_when_initialization_fails(monkeypatch):
     from smartmoney.trading.mt5_client import MT5Client
 
