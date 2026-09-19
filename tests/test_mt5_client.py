@@ -327,4 +327,35 @@ def test_market_price_selects_symbol_when_not_selected(monkeypatch):
     assert price == {
         "bid": 1.15409,
         "ask": 1.15411,
-    }                                                   
+    }
+
+def test_mt5_client_order_check_delegates_to_mt5(monkeypatch):
+    from smartmoney.trading.mt5_client import MT5Client
+
+    captured = {}
+
+    def fake_order_check(request):
+        captured["request"] = request
+        return {
+            "retcode": 0,
+            "comment": "Done",
+        }
+
+    monkeypatch.setattr(
+        mt5,
+        "order_check",
+        fake_order_check,
+    )
+
+    client = MT5Client()
+
+    request = {
+        "symbol": "EURUSD",
+        "volume": 0.01,
+    }
+
+    result = client.order_check(request)
+
+    assert captured["request"] == request
+    assert result["retcode"] == 0
+    assert result["comment"] == "Done"                                      
