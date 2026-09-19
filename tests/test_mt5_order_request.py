@@ -1,4 +1,5 @@
 import pytest
+import MetaTrader5 as mt5
 from smartmoney.trading.mt5_order_request import (
     build_mt5_order_request,
 )
@@ -336,3 +337,23 @@ def test_build_real_mt5_order_request_uses_configured_filling_mode():
     )
 
     assert request["type_filling"] == 1
+
+def test_build_mt5_close_request_for_buy_position():
+    from smartmoney.trading.mt5_order_request import build_mt5_close_request
+
+    request = build_mt5_close_request(
+        symbol="ETHEREUM",
+        volume=0.01,
+        position_ticket=379625952,
+        position_type=0,
+        price=2641.45,
+    )
+
+    assert request["action"] == mt5.TRADE_ACTION_DEAL
+    assert request["symbol"] == "ETHEREUM"
+    assert request["volume"] == 0.01
+    assert request["type"] == mt5.ORDER_TYPE_SELL
+    assert request["position"] == 379625952
+    assert request["price"] == 2641.45
+    assert request["type_time"] == mt5.ORDER_TIME_GTC
+    assert request["type_filling"] == 0    

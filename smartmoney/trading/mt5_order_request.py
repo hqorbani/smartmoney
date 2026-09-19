@@ -126,3 +126,43 @@ def build_real_mt5_order_request(
         "type_time": mt5.ORDER_TIME_GTC,
         "type_filling": type_filling,
     }
+
+def build_mt5_close_request(
+    symbol: str,
+    volume: float,
+    position_ticket: int,
+    position_type: int,
+    price: float,
+    deviation: int = 20,
+    magic: int = 234000,
+    comment: str = "smartmoney close",
+    type_filling: int = 0,
+) -> dict:
+    if volume <= 0:
+        raise ValueError("Volume must be positive")
+
+    if position_ticket <= 0:
+        raise ValueError("Position ticket must be positive")
+
+    if price <= 0:
+        raise ValueError("Price must be positive")
+
+    close_type = (
+        mt5.ORDER_TYPE_SELL
+        if position_type == mt5.POSITION_TYPE_BUY
+        else mt5.ORDER_TYPE_BUY
+    )
+
+    return {
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": symbol,
+        "volume": volume,
+        "type": close_type,
+        "position": position_ticket,
+        "price": price,
+        "deviation": deviation,
+        "magic": magic,
+        "comment": comment,
+        "type_time": mt5.ORDER_TIME_GTC,
+        "type_filling": type_filling,
+    }
