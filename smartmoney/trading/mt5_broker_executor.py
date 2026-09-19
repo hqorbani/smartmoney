@@ -64,7 +64,14 @@ class MT5BrokerExecutor(BrokerExecutor):
                     plan=plan,
                     volume=self.volume,
                 )
+            check_result = self.mt5_client.order_check(request)
 
+            if check_result["retcode"] != 10009:
+                return ExecutionResult(
+                    status=ExecutionStatus.REJECTED,
+                    plan=plan,
+                    message=check_result.get("comment", "Order check failed"),
+                )
             success = self.mt5_client.send_order(request)
         except Exception as exc:
             return ExecutionResult(

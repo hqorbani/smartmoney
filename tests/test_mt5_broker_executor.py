@@ -21,6 +21,11 @@ def test_mt5_broker_executor_returns_executed_result():
     )
 
     class FakeMT5:
+        def order_check(self, request):
+            return {
+                "retcode": 10009,
+                "comment": "Done",
+            }
         def send_order(self, plan):
             return True
 
@@ -45,9 +50,16 @@ def test_mt5_broker_executor_returns_rejected_result_when_order_fails():
     )
 
     class FakeMT5:
+
+        def order_check(self, request):
+            return {
+                "retcode": 10009,
+                "comment": "Done",
+            }
+
         def send_order(self, plan):
             return False
-
+        
     executor = MT5BrokerExecutor(FakeMT5())
 
     result = executor.execute(plan)
@@ -69,6 +81,12 @@ def test_mt5_broker_executor_returns_rejected_result_when_mt5_raises():
     )
 
     class FakeMT5:
+        def order_check(self, request):
+            return {
+                "retcode": 10009,
+                "comment": "Done",
+            }
+
         def send_order(self, plan):
             raise RuntimeError("MT5 connection failed")
 
@@ -95,6 +113,12 @@ def test_mt5_broker_executor_sends_order_request():
     class FakeMT5Client:
         def __init__(self):
             self.received_request = None
+
+        def order_check(self, request):
+            return {
+                "retcode": 10009,
+                "comment": "Done",
+            }
 
         def send_order(self, request):
             self.received_request = request
@@ -159,6 +183,12 @@ def test_mt5_broker_executor_uses_configured_volume():
         def __init__(self):
             self.received_request = None
 
+        def order_check(self, request):
+            return {
+                "retcode": 10009,
+                "comment": "Done",
+            }
+
         def send_order(self, request):
             self.received_request = request
             return True
@@ -215,6 +245,12 @@ def test_mt5_broker_executor_rejects_when_mt5_raises():
     )
 
     class FakeMT5Client:
+        def order_check(self, request):
+            return {
+                "retcode": 10009,
+                "comment": "Done",
+            }
+
         def send_order(self, request):
             raise RuntimeError("MT5 connection failed")
 
@@ -241,6 +277,12 @@ def test_mt5_broker_executor_preserves_client_result():
     )
 
     class FakeMT5Client:
+        def order_check(self, request):
+            return {
+                "retcode": 10009,
+                "comment": "Done",
+            }
+
         def send_order(self, request):
             return {
                 "retcode": 10009,
@@ -274,6 +316,12 @@ def test_mt5_broker_executor_rejects_broker_result_with_failed_retcode():
     )
 
     class FakeMT5Client:
+        def order_check(self, request):
+            return {
+                "retcode": 10009,
+                "comment": "Done",
+            }
+    
         def send_order(self, request):
             return {
                 "retcode": 10006,
@@ -307,6 +355,12 @@ def test_mt5_broker_executor_accepts_configured_success_retcode():
     )
 
     class FakeMT5Client:
+        def order_check(self, request):
+            return {
+                "retcode": 10009,
+                "comment": "Done",
+            }
+
         def send_order(self, request):
             return {
                 "retcode": 20000,
@@ -397,6 +451,12 @@ def test_mt5_broker_executor_uses_client_send_order():
         def __init__(self):
             self.requests = []
 
+        def order_check(self, request):
+            return {
+                "retcode": 10009,
+                "comment": "Done",
+            }
+
         def send_order(self, request):
             self.requests.append(request)
             return {
@@ -445,14 +505,22 @@ def test_executor_builds_real_mt5_request():
     )
 
     class FakeMT5Client:
+
         def __init__(self):
             self.received_request = None
+
         def market_price(self, symbol):
             return {
                 "bid": 1.15400,
                 "ask": 1.15420,
             }
 
+        def order_check(self, request):
+            return {
+                "retcode": 10009,
+                "comment": "Done",
+            }
+        
         def send_order(self, request):
             self.received_request = request
             return True
@@ -507,7 +575,12 @@ def test_executor_uses_market_price_for_real_request():
                 "bid": 1.15400,
                 "ask": 1.15420,
             }
-
+        def order_check(self, request):
+            return {
+                "retcode": 10009,
+                "comment": "Done",
+            }
+        
         def send_order(self, request):
             self.received_request = request
             return True
@@ -547,7 +620,12 @@ def test_executor_uses_bid_price_for_real_sell_request():
                 "bid": 1.15400,
                 "ask": 1.15420,
             }
-
+        def order_check(self, request):
+            return {
+                "retcode": 10009,
+                "comment": "Done",
+            }
+        
         def send_order(self, request):
             self.received_request = request
             return {
@@ -579,3 +657,106 @@ def test_executor_uses_bid_price_for_real_sell_request():
     assert result.status == ExecutionStatus.EXECUTED
     assert client.received_request["price"] == 1.15400
     assert client.received_request["type"] == mt5.ORDER_TYPE_SELL
+
+def test_executor_rejects_when_order_check_fails_without_sending():
+    class FakeMT5Client:
+        def __init__(self):
+            self.order_check_called = False
+            self.send_order_called = False
+
+        def market_price(self, symbol):
+            return {
+                "bid": 1.15400,
+                "ask": 1.15420,
+            }
+
+        def order_check(self, request):
+            self.order_check_called = True
+            return {
+                "retcode": 10016,
+                "comment": "Invalid stops",
+            }
+
+        def send_order(self, request):
+            self.send_order_called = True
+            raise AssertionError(
+                "order_send must not be called when order_check fails"
+            )
+
+    client = FakeMT5Client()
+
+    executor = MT5BrokerExecutor(
+        mt5_client=client,
+        volume=0.01,
+        use_real_request=True,
+    )
+
+    plan = TradePlan(
+        symbol="EURUSD",
+        timeframe=15,
+        direction=TradeDirection.BUY,
+        entry_price=1.15411,
+        stop_loss=1.15300,
+        take_profit=1.15600,
+        risk_distance=0.00111,
+        orderblock_index=10,
+    )
+
+    result = executor.execute(plan)
+
+    assert client.order_check_called is True
+    assert client.send_order_called is False
+    assert result.status == ExecutionStatus.REJECTED
+    assert result.message == "Invalid stops"
+
+def test_executor_sends_order_when_order_check_succeeds():
+    class FakeMT5Client:
+        def __init__(self):
+            self.order_check_called = False
+            self.send_order_called = False
+
+        def market_price(self, symbol):
+            return {
+                "bid": 1.15400,
+                "ask": 1.15420,
+            }
+
+        def order_check(self, request):
+            self.order_check_called = True
+            return {
+                "retcode": 10009,
+                "comment": "Done",
+            }
+
+        def send_order(self, request):
+            self.send_order_called = True
+            return {
+                "retcode": 10009,
+                "comment": "Done",
+                "order": 123456,
+            }
+
+    client = FakeMT5Client()
+
+    executor = MT5BrokerExecutor(
+        mt5_client=client,
+        volume=0.01,
+        use_real_request=True,
+    )
+
+    plan = TradePlan(
+        symbol="EURUSD",
+        timeframe=15,
+        direction=TradeDirection.BUY,
+        entry_price=1.15411,
+        stop_loss=1.15300,
+        take_profit=1.15600,
+        risk_distance=0.00111,
+        orderblock_index=10,
+    )
+
+    result = executor.execute(plan)
+
+    assert client.order_check_called is True
+    assert client.send_order_called is True
+    assert result.status == ExecutionStatus.EXECUTED    
