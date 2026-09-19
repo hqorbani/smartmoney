@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from smartmoney.analyzers.tradeplan import TradePlanAnalyzer
 from smartmoney.core.context import MarketContext
 from smartmoney.models.signal import SignalDirection
+from smartmoney.trading.trade_plan import TradeDirection
 
 
 def make_context():
@@ -60,7 +61,7 @@ def test_bullish_tradeplan_is_created():
 
     trade = context.trade_plan
 
-    assert trade.direction == SignalDirection.BUY
+    assert trade.direction == TradeDirection.BUY
     assert trade.entry_price == 100
     assert trade.stop_loss == 98
     assert trade.take_profit == 104
@@ -83,7 +84,7 @@ def test_bearish_tradeplan_is_created():
 
     trade = context.trade_plan
 
-    assert trade.direction == SignalDirection.SELL
+    assert trade.direction == TradeDirection.SELL
     assert trade.entry_price == 100
     assert trade.stop_loss == 102
     assert trade.take_profit == 96

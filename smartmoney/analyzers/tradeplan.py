@@ -1,6 +1,6 @@
 from smartmoney.analyzers.base import Analyzer
 from smartmoney.models.signal import SignalDirection
-from smartmoney.models.tradeplan import TradePlan
+from smartmoney.trading.trade_plan import TradeDirection, TradePlan
 
 
 class TradePlanAnalyzer(Analyzer):
@@ -40,18 +40,23 @@ class TradePlanAnalyzer(Analyzer):
 
         risk = abs(entry_price - stop_loss)
         reward = abs(take_profit - entry_price)
-
+        
         if risk <= 0:
             return
-
         risk_reward_ratio = reward / risk
+        trade_direction = (
+            TradeDirection.BUY
+            if direction == SignalDirection.BUY
+            else TradeDirection.SELL
+        )
 
         context.trade_plan = TradePlan(
-            direction=direction,
+            symbol=context.symbol,
+            timeframe=context.timeframe,
+            direction=trade_direction,
             entry_price=entry_price,
             stop_loss=stop_loss,
             take_profit=take_profit,
-            risk=risk,
-            reward=reward,
-            risk_reward_ratio=risk_reward_ratio,
+            risk_distance=risk,
+            orderblock_index=0,
         )

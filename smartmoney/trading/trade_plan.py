@@ -26,5 +26,4 @@ class TradePlan:
     take_profit: float
 
     risk_distance: float
-
     orderblock_index: int
