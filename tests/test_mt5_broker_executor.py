@@ -508,7 +508,8 @@ def test_executor_builds_real_mt5_request():
 
         def __init__(self):
             self.received_request = None
-
+        def symbol_info(self, symbol):
+            return type("SymbolInfo", (), {"filling_mode": 1})()
         def market_price(self, symbol):
             return {
                 "bid": 1.15400,
@@ -567,7 +568,8 @@ def test_executor_uses_market_price_for_real_request():
     class FakeMT5Client:
         def __init__(self):
             self.received_request = None
-
+        def symbol_info(self, symbol):
+            return type("SymbolInfo", (), {"filling_mode": 1})()
         def market_price(self, symbol):
             assert symbol == "EURUSD"
 
@@ -614,7 +616,8 @@ def test_executor_uses_bid_price_for_real_sell_request():
     class FakeMT5Client:
         def __init__(self):
             self.received_request = None
-
+        def symbol_info(self, symbol):
+            return type("SymbolInfo", (), {"filling_mode": 1})()
         def market_price(self, symbol):
             return {
                 "bid": 1.15400,
@@ -663,7 +666,8 @@ def test_executor_rejects_when_order_check_fails_without_sending():
         def __init__(self):
             self.order_check_called = False
             self.send_order_called = False
-
+        def symbol_info(self, symbol):
+            return type("SymbolInfo", (), {"filling_mode": 1})()
         def market_price(self, symbol):
             return {
                 "bid": 1.15400,
@@ -714,7 +718,8 @@ def test_executor_sends_order_when_order_check_succeeds():
         def __init__(self):
             self.order_check_called = False
             self.send_order_called = False
-
+        def symbol_info(self, symbol):
+            return type("SymbolInfo", (), {"filling_mode": 1})()
         def market_price(self, symbol):
             return {
                 "bid": 1.15400,
@@ -759,4 +764,46 @@ def test_executor_sends_order_when_order_check_succeeds():
 
     assert client.order_check_called is True
     assert client.send_order_called is True
-    assert result.status == ExecutionStatus.EXECUTED    
+    assert result.status == ExecutionStatus.EXECUTED
+
+def test_executor_uses_symbol_filling_mode():
+    from smartmoney.trading.mt5_broker_executor import MT5BrokerExecutor
+
+    class FakeMT5Client:
+        def __init__(self):
+            self.sent_request = None
+
+        def symbol_info(self, symbol):
+            return type("SymbolInfo", (), {"filling_mode": 1})()
+
+        def market_price(self, symbol):
+            return {"ask": 1.15420, "bid": 1.15400}
+
+        def order_check(self, request):
+            return {"retcode": 10009, "comment": "Done"}
+
+        def send_order(self, request):
+            self.sent_request = request
+            return {"retcode": 10009, "order": 123}
+
+    plan = TradePlan(
+        symbol="EURUSD",
+        timeframe=15,
+        direction=TradeDirection.BUY,
+        entry_price=1.15411,
+        stop_loss=1.15300,
+        take_profit=1.15600,
+        risk_distance=0.00111,
+        orderblock_index=10,
+    )
+
+    client = FakeMT5Client()
+    executor = MT5BrokerExecutor(
+        mt5_client=client,
+        use_real_request=True,
+    )
+
+    result = executor.execute(plan)
+    print(result)
+
+    assert client.sent_request["type_filling"] == 1    

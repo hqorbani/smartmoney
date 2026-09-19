@@ -54,10 +54,13 @@ class MT5BrokerExecutor(BrokerExecutor):
                 else:
                     price = market_price["bid"]
 
+                symbol_info = self.mt5_client.symbol_info(plan.symbol)
+
                 request = build_real_mt5_order_request(
                     plan=plan,
                     volume=self.volume,
                     price=price,
+                    type_filling=symbol_info.filling_mode,
                 )
             else:
                 request = build_mt5_order_request(
