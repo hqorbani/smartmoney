@@ -62,6 +62,7 @@ class Scheduler:
 
         self.interval = interval
         self.executor = executor
+        self._executed_trade_keys = set()
         self._running = False
 
     # ---------------------------------------------------------
