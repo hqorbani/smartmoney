@@ -39,9 +39,6 @@ class MT5BrokerExecutor(BrokerExecutor):
     def shutdown(self) -> bool:
         return self.mt5_client.shutdown()
 
-    def shutdown(self) -> bool:
-        return self.mt5_client.shutdown()
-
     def execute(
         self,
         plan: TradePlan,
