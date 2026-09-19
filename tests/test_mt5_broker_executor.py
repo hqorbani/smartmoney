@@ -863,3 +863,32 @@ def test_mt5_broker_executor_uses_position_size_plan_for_volume():
     assert result.status == ExecutionStatus.EXECUTED
     assert client.received_request["volume"] == 0.02
 
+def test_mt5_broker_executor_closes_buy_position():
+    from smartmoney.trading.mt5_broker_executor import MT5BrokerExecutor
+
+    class FakeClient:
+        def symbol_info_tick(self, symbol):
+            return {"bid": 2641.45, "ask": 2641.45}
+
+        def send_order(self, request):
+            assert request["symbol"] == "ETHEREUM"
+            assert request["volume"] == 0.01
+            assert request["type"] == mt5.ORDER_TYPE_SELL
+            assert request["position"] == 379625952
+            return {"retcode": 10009, "comment": "Request executed"}
+
+    executor = MT5BrokerExecutor(
+        mt5_client=FakeClient(),
+        volume=0.01,
+        use_real_request=True,
+    )
+
+    result = executor.close_position(
+        ticket=379625952,
+        symbol="ETHEREUM",
+        volume=0.01,
+        position_type=mt5.POSITION_TYPE_BUY,
+    )
+
+    assert result.status == ExecutionStatus.EXECUTED
+    assert result.message == "MT5 position closed"

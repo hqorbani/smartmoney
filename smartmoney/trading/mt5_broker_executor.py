@@ -9,6 +9,7 @@ from smartmoney.trading.mt5_order_request import (
     build_real_mt5_order_request,
 )
 from smartmoney.trading.mt5_volume import calculate_mt5_volume
+from smartmoney.trading.mt5_order_request import build_mt5_close_request
 
 class MT5BrokerExecutor(BrokerExecutor):
     """
@@ -41,6 +42,67 @@ class MT5BrokerExecutor(BrokerExecutor):
         self.success_retcode = success_retcode
     def initialize(self) -> bool:
         return self.mt5_client.initialize()
+
+    def close_position(
+        self,
+        ticket: int,
+        symbol: str,
+        volume: float,
+        position_type: int,
+    ):
+        if ticket <= 0:
+            raise ValueError("Position ticket must be positive")
+
+        if volume <= 0:
+            raise ValueError("Volume must be positive")
+
+        tick = self.mt5_client.symbol_info_tick(symbol)
+        if tick is None:
+            return ExecutionResult(
+                status=ExecutionStatus.REJECTED,
+                plan=None,
+                message="MT5 tick unavailable",
+            )
+
+        bid = tick["bid"] if isinstance(tick, dict) else tick.bid
+        ask = tick["ask"] if isinstance(tick, dict) else tick.ask
+
+        price = bid if position_type == 0 else ask
+
+        request = build_mt5_close_request(
+            symbol=symbol,
+            volume=volume,
+            position_ticket=ticket,
+            position_type=position_type,
+            price=price,
+        )
+
+        success = self.mt5_client.send_order(request)
+
+        if isinstance(success, dict):
+            retcode = success.get("retcode")
+            comment = success.get("comment", "MT5 close rejected")
+        elif hasattr(success, "retcode"):
+            retcode = success.retcode
+            comment = success.comment or "MT5 close rejected"
+        else:
+            retcode = None
+            comment = "MT5 close rejected"
+
+        if retcode != self.success_retcode:
+            return ExecutionResult(
+                status=ExecutionStatus.REJECTED,
+                plan=None,
+                message=comment,
+                broker_result=success,
+            )
+
+        return ExecutionResult(
+            status=ExecutionStatus.EXECUTED,
+            plan=None,
+            message="MT5 position closed",
+            broker_result=success,
+        )
 
     def shutdown(self) -> bool:
         return self.mt5_client.shutdown()
