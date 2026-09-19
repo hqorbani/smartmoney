@@ -23,7 +23,7 @@ def test_mt5_broker_executor_returns_executed_result():
     class FakeMT5:
         def order_check(self, request):
             return {
-                "retcode": 10009,
+                "retcode": 0,
                 "comment": "Done",
             }
         def send_order(self, plan):
@@ -53,7 +53,7 @@ def test_mt5_broker_executor_returns_rejected_result_when_order_fails():
 
         def order_check(self, request):
             return {
-                "retcode": 10009,
+                "retcode": 0,
                 "comment": "Done",
             }
 
@@ -83,7 +83,7 @@ def test_mt5_broker_executor_returns_rejected_result_when_mt5_raises():
     class FakeMT5:
         def order_check(self, request):
             return {
-                "retcode": 10009,
+                "retcode": 0,
                 "comment": "Done",
             }
 
@@ -116,7 +116,7 @@ def test_mt5_broker_executor_sends_order_request():
 
         def order_check(self, request):
             return {
-                "retcode": 10009,
+                "retcode": 0,
                 "comment": "Done",
             }
 
@@ -185,7 +185,7 @@ def test_mt5_broker_executor_uses_configured_volume():
 
         def order_check(self, request):
             return {
-                "retcode": 10009,
+                "retcode": 0,
                 "comment": "Done",
             }
 
@@ -247,7 +247,7 @@ def test_mt5_broker_executor_rejects_when_mt5_raises():
     class FakeMT5Client:
         def order_check(self, request):
             return {
-                "retcode": 10009,
+                "retcode": 0,
                 "comment": "Done",
             }
 
@@ -279,7 +279,7 @@ def test_mt5_broker_executor_preserves_client_result():
     class FakeMT5Client:
         def order_check(self, request):
             return {
-                "retcode": 10009,
+                "retcode": 0,
                 "comment": "Done",
             }
 
@@ -318,7 +318,7 @@ def test_mt5_broker_executor_rejects_broker_result_with_failed_retcode():
     class FakeMT5Client:
         def order_check(self, request):
             return {
-                "retcode": 10009,
+                "retcode": 0,
                 "comment": "Done",
             }
     
@@ -357,7 +357,7 @@ def test_mt5_broker_executor_accepts_configured_success_retcode():
     class FakeMT5Client:
         def order_check(self, request):
             return {
-                "retcode": 10009,
+                "retcode": 0,
                 "comment": "Done",
             }
 
@@ -453,7 +453,7 @@ def test_mt5_broker_executor_uses_client_send_order():
 
         def order_check(self, request):
             return {
-                "retcode": 10009,
+                "retcode": 0,
                 "comment": "Done",
             }
 
@@ -518,7 +518,7 @@ def test_executor_builds_real_mt5_request():
 
         def order_check(self, request):
             return {
-                "retcode": 10009,
+                "retcode": 0,
                 "comment": "Done",
             }
         
@@ -579,7 +579,7 @@ def test_executor_uses_market_price_for_real_request():
             }
         def order_check(self, request):
             return {
-                "retcode": 10009,
+                "retcode": 0,
                 "comment": "Done",
             }
         
@@ -625,7 +625,7 @@ def test_executor_uses_bid_price_for_real_sell_request():
             }
         def order_check(self, request):
             return {
-                "retcode": 10009,
+                "retcode": 0,
                 "comment": "Done",
             }
         
@@ -729,7 +729,7 @@ def test_executor_sends_order_when_order_check_succeeds():
         def order_check(self, request):
             self.order_check_called = True
             return {
-                "retcode": 10009,
+                "retcode": 0,
                 "comment": "Done",
             }
 
@@ -780,7 +780,7 @@ def test_executor_uses_symbol_filling_mode():
             return {"ask": 1.15420, "bid": 1.15400}
 
         def order_check(self, request):
-            return {"retcode": 10009, "comment": "Done"}
+            return {"retcode": 0, "comment": "Done"}
 
         def send_order(self, request):
             self.sent_request = request
@@ -845,7 +845,7 @@ def test_mt5_broker_executor_uses_position_size_plan_for_volume():
                 },
             )()
         def order_check(self, request):
-            return {"retcode": 10009, "comment": "Done"}
+            return {"retcode": 0, "comment": "Done"}
 
         def send_order(self, request):
             self.received_request = request
@@ -862,3 +862,4 @@ def test_mt5_broker_executor_uses_position_size_plan_for_volume():
 
     assert result.status == ExecutionStatus.EXECUTED
     assert client.received_request["volume"] == 0.02
+

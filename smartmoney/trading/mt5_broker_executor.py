@@ -100,7 +100,7 @@ class MT5BrokerExecutor(BrokerExecutor):
                 )
             check_result = self.mt5_client.order_check(request)
 
-            if check_result["retcode"] != 10009:
+            if check_result["retcode"] != 0:
                 return ExecutionResult(
                     status=ExecutionStatus.REJECTED,
                     plan=plan,
