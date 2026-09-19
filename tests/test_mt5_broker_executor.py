@@ -806,4 +806,4 @@ def test_executor_uses_symbol_filling_mode():
     result = executor.execute(plan)
     print(result)
 
-    assert client.sent_request["type_filling"] == 1    
+    assert client.sent_request["type_filling"] == 0

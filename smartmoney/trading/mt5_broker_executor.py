@@ -60,7 +60,7 @@ class MT5BrokerExecutor(BrokerExecutor):
                     plan=plan,
                     volume=self.volume,
                     price=price,
-                    type_filling=symbol_info.filling_mode,
+                    type_filling=0 if symbol_info.filling_mode & 1 else 1,
                 )
             else:
                 request = build_mt5_order_request(
