@@ -7,106 +7,91 @@ SmartMoney is a modular Python project for detecting and evaluating SMC/ICT-styl
 > **Current branch:** `main`  
 
 ---
-
 ## 1. Project Purpose
 
-The project is being developed as a reusable market-analysis framework rather than as a single hard-coded trading script.
+The project is being developed as a reusable market-analysis and trading framework rather than as a single hard-coded trading script.
 
 The intended architecture allows the project to grow toward:
 
-- Market structure analysis
-- Swing analysis
-- Fair Value Gap (FVG) detection and lifecycle management
-- Order Block detection
-- Structure events
-- Signal generation
-- Entry validation
-- Stop-loss calculation
-- Take-profit calculation
-- Risk/reward calculation
-- Position sizing
-- Signal scoring
-- Multi-timeframe analysis
-- Historical signal evaluation
-- Backtesting
-- Optional trade execution in a future stage
+* Market structure analysis
+* Swing analysis
+* Fair Value Gap (FVG) detection and lifecycle management
+* Order Block detection
+* Structure events
+* Signal generation
+* Entry validation
+* Stop-loss calculation
+* Take-profit calculation
+* Risk/reward calculation
+* Position sizing
+* Broker-aware position sizing
+* Signal scoring
+* Multi-timeframe analysis
+* Historical signal evaluation
+* Backtesting
+* MetaTrader 5 trade execution
+* Position management
 
-The current system is primarily an **analysis and signal-generation system**. Automatic order execution is not part of the current trading pipeline.
+The current system is primarily an **analysis and signal-generation system**, with a separate MT5 execution layer that has been implemented and validated on a Demo account.
 
----
-
-# 2. Current Capabilities
-
-The current codebase contains the following major areas.
-
-## Market Data
-
-- MetaTrader 5 integration
-- Multi-symbol analysis
-- Multi-timeframe analysis
-- Historical candle retrieval
-- Current market-price retrieval
-- Account-balance retrieval
-- Removal of the incomplete/latest candle before analysis
-
-## Market Analysis
-
-- Swing detection
-- Swing relationships
-- Fair Value Gap detection
-- FVG lifecycle management
-- Order Block detection
-- Structure analysis
-- Market structure state
-- Structure events
-
-## Signal and Strategy Pipeline
-
-- Signal generation
-- Active FVG scanning
-- Order Block + Active FVG scanning
-- Entry validation
-- Stop-loss planning
-- Take-profit planning
-- Trade-plan generation
-- Position sizing
-
-## Signal Processing
-
-- Rule-based scoring
-- Distance calculation
-- Signal repository
-- Signal querying
-- Sorting and limiting results
-
-## Applications
-
-- Live scanner
-- Chart/visualization application
-
-## Testing
-
-The repository contains focused tests for:
-
-- Analyzer execution
-- Historical backtesting
-- Order Block zone statistics
-- Order Block diagnostics
-- MetaTrader 5 data provider
-- Entry
-- Full pipeline
-- FVG
-- FVG lifecycle
-- Order Block
-- Pipeline
-- Position sizing
-- Signal
-- Stop loss
-- Take profit
-- Trade plan
+**Automatic execution is not yet connected to the main Live analysis pipeline.**
 
 ---
 
+## 2. Current Capabilities
+
+### Market Data
+
+* MetaTrader 5 integration
+* Multi-symbol analysis
+* Multi-timeframe analysis
+* Historical candle retrieval
+* Current market-price retrieval
+* Account-balance retrieval
+* Removal of the incomplete/latest candle before analysis
+
+### Market Analysis
+
+* Swing detection
+* Swing relationships
+* Fair Value Gap detection
+* FVG lifecycle management
+* Order Block detection
+* Structure analysis
+* Market structure state
+* Structure events
+
+### Signal and Strategy Pipeline
+
+* Signal generation
+* Active FVG scanning
+* Order Block + Active FVG scanning
+* Entry validation
+* Stop-loss planning
+* Take-profit planning
+* Trade-plan generation
+* Generic position-size planning
+
+### MT5 Execution
+
+The project now contains a dedicated MetaTrader 5 execution layer.
+
+Current capabilities include:
+
+* MT5 order request construction
+* Broker-aware MT5 volume calculation
+* MT5 order validation through `order_check`
+* MT5 market-order execution
+* Demo position opening
+* Demo position closing
+* Broker result handling
+* Execution status/result abstraction
+
+The Demo execution path has been validated against a real MetaTrader 5 Demo account.
+
+The execution layer is currently available as infrastructure but is **not yet automatically triggered by the main Live scanner pipeline**.
+
+---
 # 3. High-Level Architecture
 
 The project is divided into several layers.
@@ -199,9 +184,9 @@ The project is divided into several layers.
 
 # 4. Runtime Flow
 
-The live application processes each configured symbol and timeframe independently.
+The analysis application processes each configured symbol and timeframe independently.
 
-The current high-level sequence is:
+The current analysis sequence is:
 
 ```text
 1. Connect to MT5
@@ -214,31 +199,80 @@ The current high-level sequence is:
 8. Run scanners
 9. Process each scanner signal
 10. Build downstream trade plans when applicable
-11. Calculate score
-12. Calculate distance from current price
-13. Store signals in repository
-14. Apply query filters/sorting/limit
-15. Publish the resulting signals
-16. Repeat after the configured scan interval
+11. Calculate position-size plan
+12. Calculate score
+13. Calculate distance from current price
+14. Store signals in repository
+15. Apply query filters/sorting/limit
+16. Publish the resulting signals
+17. Repeat after the configured scan interval
 ```
 
-The application is orchestrated by `smartmoney/core/scheduler.py` and assembled by `smartmoney/bootstrap.py`.
+The application is orchestrated by:
+
+```text
+smartmoney/core/scheduler.py
+smartmoney/bootstrap.py
+```
+
+### Execution Flow
+
+The MT5 execution layer is currently separate from the automatic Live pipeline.
+
+When explicitly invoked, the execution path is:
+
+```text
+TradePlan
+    ↓
+Broker-aware MT5 volume
+    ↓
+MT5 Order Request
+    ↓
+MT5 Order Check
+    ↓
+MT5 Order Send
+    ↓
+Opened Position
+    ↓
+Position Close Request
+    ↓
+MT5 Order Send
+    ↓
+Closed Position
+```
+
+The Demo execution path has been successfully validated for both opening and closing a position.
+
+Automatic execution from a Live-generated `TradePlan` remains a future integration step.
 
 ---
 
+
 # 5. Application Entry Points
 
-## Live Scanner
+### Live Scanner
 
 ```bash
 python -m apps.live
 ```
 
-The live application is responsible for running the market-analysis loop against MetaTrader 5.
+The Live application runs the market-analysis loop against MetaTrader 5.
 
-The application uses the bootstrap layer to construct the required provider, engines, analyzers, scanners, repository, query engine, and services.
+It currently constructs and runs the analysis pipeline.
 
-## Chart Application
+**It does not automatically send trading orders from scanner-generated trade plans yet.**
+
+### Demo Order Execution
+
+```bash
+python -m apps.demo_order
+```
+
+The Demo order application provides a controlled manual entry point for validating MT5 order execution.
+
+It is intended for Demo-account execution testing and should not be considered the production Live trading entry point.
+
+### Chart Application
 
 ```bash
 python -m apps.chart
@@ -607,7 +641,9 @@ The Trade Plan is created only after the required upstream stages have succeeded
 
 ---
 
-# 15. Position Size
+## 15. Position Size
+
+### Generic Position Size Planning
 
 Files:
 
@@ -616,7 +652,7 @@ smartmoney/analyzers/position_size.py
 smartmoney/models/position_size.py
 ```
 
-The current position-size calculation uses:
+The generic position-size calculation uses:
 
 ```text
 Account Balance
@@ -627,12 +663,48 @@ Risk Amount
         ÷
 Stop Distance
         ↓
-Position Size
+Position Size Plan
 ```
 
-The current implementation is based on raw price distance.
+This layer remains broker-independent.
 
-Broker-specific sizing using instrument contract size, tick size, and tick value is a known area for future improvement.
+### MT5 Broker-Aware Volume
+
+The MT5 execution layer converts the generic risk information into a broker-compatible MT5 volume.
+
+File:
+
+```text
+smartmoney/trading/mt5_volume.py
+```
+
+The MT5 calculation considers:
+
+* Risk amount
+* Stop distance
+* Tick value
+* Tick size
+* Volume step
+* Minimum volume
+* Maximum volume
+
+Conceptually:
+
+```text
+Risk Amount
+     ↓
+Stop Distance
+     ↓
+Tick Value / Tick Size
+     ↓
+Raw MT5 Volume
+     ↓
+Broker Volume Step
+     ↓
+Validated MT5 Volume
+```
+
+This separation keeps the generic position-size model independent from broker-specific contract rules.
 
 ---
 
@@ -897,132 +969,55 @@ Global runtime parameters should normally live in `Config` rather than being har
 
 # 26. Data Provider
 
-The MetaTrader 5 integration is implemented in:
+The MetaTrader 5 market-data integration is implemented through the MT5 provider/client layer.
+
+Market-data responsibilities include:
+
+* Connection
+* Shutdown
+* Historical rates
+* Current price
+* Account balance
+* Symbol selection
+* Market access
+
+The execution layer is intentionally separated from market-data responsibilities.
+
+Execution-specific MT5 functionality is implemented under:
 
 ```text
-smartmoney/core/mt5.py
+smartmoney/trading/
 ```
-
-The provider abstracts MT5-specific operations such as:
-
-- Connection
-- Shutdown
-- Historical rates
-- Current price
-- Account balance
-- Symbol selection / market access
-
-The rest of the analysis system should communicate through the provider abstraction instead of directly calling MT5 APIs whenever possible.
 
 ---
 
 # 27. Project Structure
 
-The following tree reflects the repository structure visible in the documented `experiment/alternative-strategy` branch.
+The current repository includes the following major areas:
 
 ```text
 smartmoney/
 │
 ├── apps/
-│   ├── __init__.py
 │   ├── live.py
-│   └── chart.py
+│   ├── chart.py
+│   └── demo_order.py
 │
 ├── smartmoney/
-│   │
 │   ├── analyzers/
-│   │   ├── __init__.py
-│   │   ├── base.py
-│   │   ├── entry.py
-│   │   ├── fvg.py
-│   │   ├── fvg_lifecycle.py
-│   │   ├── orderblock.py
-│   │   ├── position_size.py
-│   │   ├── signal.py
-│   │   ├── stoploss.py
-│   │   ├── structure.py
-│   │   ├── swing.py
-│   │   ├── swing_relation.py
-│   │   ├── takeprofit.py
-│   │   └── tradeplan.py
-│   │
 │   ├── core/
-│   │   ├── __init__.py
-│   │   ├── context.py
-│   │   ├── context_manager.py
-│   │   ├── discovery.py
-│   │   ├── engine.py
-│   │   ├── market_structure_engine.py
-│   │   ├── mt5.py
-│   │   ├── scanner_engine.py
-│   │   ├── scheduler.py
-│   │   └── structure_event_engine.py
-│   │
 │   ├── models/
-│   │   ├── __init__.py
-│   │   ├── entry.py
-│   │   ├── fvg.py
-│   │   ├── market_structure.py
-│   │   ├── orderblock.py
-│   │   ├── position_size.py
-│   │   ├── signal.py
-│   │   ├── stoploss.py
-│   │   ├── strategy_zone.py
-│   │   ├── structure.py
-│   │   ├── structure_event.py
-│   │   ├── structure_level.py
-│   │   ├── swing.py
-│   │   ├── swing_relation.py
-│   │   ├── takeprofit.py
-│   │   └── tradeplan.py
-│   │
 │   ├── query/
-│   │   ├── __init__.py
-│   │   ├── query.py
-│   │   └── query_engine.py
-│   │
 │   ├── repository/
-│   │   ├── __init__.py
-│   │   └── signal_repository.py
-│   │
 │   ├── scanners/
-│   │   ├── __init__.py
-│   │   ├── active_fvg.py
-│   │   ├── base.py
-│   │   ├── orderblock_active_fvg.py
-│   │   └── registry.py
-│   │
 │   ├── scoring/
-│   │   ├── base.py
-│   │   ├── engine.py
-│   │   ├── fvg.py
-│   │   └── orderblock.py
-│   │
 │   ├── services/
-│   │   ├── __init__.py
-│   │   └── distance_service.py
-│   │
+│   ├── trading/
 │   ├── visualization/
-│   │   └── chart.py
-│   │
-│   ├── __init__.py
 │   ├── bootstrap.py
 │   └── config.py
 │
 ├── tests/
-│   ├── test_analyzer_runner.py
-│   ├── test_chart.py
-│   ├── test_entry.py
-│   ├── test_full_pipeline.py
-│   ├── test_fvg.py
-│   ├── test_fvg_lifecycle.py
-│   ├── test_orderblock.py
-│   ├── test_pipeline.py
-│   ├── test_position_size.py
-│   ├── test_signal.py
-│   ├── test_stoploss.py
-│   ├── test_takeprofit.py
-│   └── test_tradeplan.py
 │
 ├── .env.example
 ├── .gitignore
@@ -1030,6 +1025,33 @@ smartmoney/
 ├── requirements.txt
 └── README.md
 ```
+
+### Trading Execution Layer
+
+The trading package currently contains components for:
+
+```text
+smartmoney/trading/
+├── broker_executor.py
+├── execution.py
+├── mt5_broker_executor.py
+├── mt5_client.py
+├── mt5_order_request.py
+├── mt5_volume.py
+├── position_size.py
+└── trade_plan.py
+```
+
+Responsibilities include:
+
+* Execution abstractions
+* Broker execution
+* MT5 client access
+* MT5 order-request construction
+* MT5 volume conversion
+* Position execution
+* Position closing
+* Trade-plan and position-size integration
 
 ---
 
@@ -1068,15 +1090,38 @@ pytest -q
 Focused tests can be run individually, for example:
 
 ```bash
-pytest -q tests/test_fvg.py tests/test_fvg_lifecycle.py
+pytest -q tests/test_mt5_broker_executor.py
 ```
 
-Before committing a meaningful change:
+The repository currently contains tests covering both analysis and execution components, including:
 
-1. Run the focused tests for the changed component.
-2. Run the complete test suite.
-3. Confirm that existing behavior has not regressed.
-4. Update documentation when architecture or behavior changes.
+* Analyzer execution
+* Historical backtesting
+* Order Block research
+* Entry
+* Full pipeline
+* FVG
+* FVG lifecycle
+* Order Block
+* Pipeline
+* Position sizing
+* Signal
+* Stop loss
+* Take profit
+* Trade plan
+* MT5 client behavior
+* MT5 integration
+* MT5 order requests
+* MT5 broker execution
+* MT5 volume conversion
+* Demo order helpers
+
+The MT5 Demo execution path has been manually validated for:
+
+* Opening a Demo position
+* Closing the opened Demo position
+
+Production/live trading must not be considered validated solely from these Demo-account tests.
 
 ---
 
@@ -1166,7 +1211,7 @@ This is not an error when the entry condition has not been met.
 
 # 32. Risk Management Semantics
 
-The current risk-management flow is:
+The generic risk-management flow is:
 
 ```text
 Account Balance
@@ -1177,21 +1222,18 @@ Risk Amount
        ↓
 Stop Distance
        ↓
-Position Size
+Position Size Plan
 ```
 
-The current position-size calculation is based on price distance.
+For MT5 execution, the generic risk information is converted into broker-compatible volume using instrument-specific information:
 
-It should not yet be treated as the final broker-accurate sizing implementation for all instruments.
+* Tick size
+* Tick value
+* Volume step
+* Minimum volume
+* Maximum volume
 
-A future implementation should consider instrument-specific:
-
-- Tick size
-- Tick value
-- Contract size
-- Volume step
-- Minimum volume
-- Maximum volume
+The generic analyzer and the MT5-specific converter are intentionally separate.
 
 ---
 
@@ -1236,40 +1278,65 @@ Until that is resolved, documentation should not pretend that the repository is 
 
 # 34. Roadmap
 
-Roadmap items are grouped by development stage rather than being treated as completed functionality.
+### Completed
 
-## Current / Near Term
+* MT5 market-data integration
+* Generic position-size planning
+* MT5 broker-aware volume conversion
+* MT5 order request construction
+* MT5 order validation
+* MT5 broker execution abstraction
+* Demo position opening
+* Demo position closing
+* Demo execution result handling
 
-- Improve market structure analysis
-- Improve structure-event logic
-- Improve BOS / CHOCH behavior
-- Improve signal quality
-- Improve scoring
-- Improve multi-timeframe analysis
-- Expand test coverage
-- Resolve repository/output consistency
-- Improve broker-aware position sizing
+### Current / Near Term
 
-## Medium Term
+* Connect generated `TradePlan` objects to the MT5 execution layer
+* Define automatic execution safeguards
+* Add position lifecycle tracking
+* Add duplicate-position protection
+* Improve execution error handling
+* Improve broker-specific execution validation
+* Resolve remaining repository/documentation inconsistencies
 
-- Liquidity analysis
-- Premium / Discount analysis
-- Multi-timeframe confluence
-- Historical signal tracking
-- Backtesting
-- Performance evaluation
-- Signal lifecycle/history analysis
+### Medium Term
 
-## Long Term
+* Liquidity analysis
+* Premium / Discount analysis
+* Multi-timeframe confluence
+* Historical signal tracking
+* Backtesting
+* Performance evaluation
+* Signal lifecycle/history analysis
+* Automated position management
 
-- Trade execution layer
-- Broker-aware order management
-- Position management
-- Notifications
-- Production monitoring
-- Advanced strategy evaluation
+### Long Term
 
-Roadmap items are future goals and must not be described as implemented until the corresponding code and tests exist.
+* Production Live trading activation
+* Production safety controls
+* Notifications
+* Monitoring
+* Advanced strategy evaluation
+* Operational recovery and execution monitoring
+
+### Important Execution Status
+
+The project should currently be understood as:
+
+```text
+Analysis Pipeline
+        +
+MT5 Execution Infrastructure
+        +
+Validated Demo Open/Close
+        ↓
+Automatic Live Execution
+        ↓
+NOT YET CONNECTED
+```
+
+The successful Demo execution tests do **not** mean that automatic Live trading is enabled.
 
 ---
 
@@ -1354,223 +1421,54 @@ The architecture should evolve deliberately rather than accumulating shortcuts t
 
 ---
 
-# 38. # Historical Backtesting and Order Block Research
+# 38. Recommended Development Workflow
 
-The project includes a historical backtesting and research workflow for evaluating Order Block behavior without exposing future candles to the analyzers during first-touch detection.
+When implementing a new feature:
 
-## Historical Backtest Runner
-
-File:
-
-```
-`smartmoney/backtesting/runner.py`
-```
-
-`HistoricalBacktestRunner` replays historical candles one by one.
-
-For each historical candle:
-
-1. Only candles available up to the current index are exposed to the analyzers.
-2. FVG and Order Block analysis is executed on the currently available history.
-3. Newly confirmed Order Blocks are registered.
-4. Pending Order Blocks are monitored for their first price touch.
-5. A first-touch observation is recorded only once for each Order Block.
-
-This prevents future candles from being used by the analyzers or by first-touch classification.
-
-## Order Block First-Touch Zones
-
-The first candle that overlaps an Order Block is classified according to penetration depth.
-
-The penetration value is normalized between `0.0` and `1.0`.
-
-Zones are:
-
-| Zone     | Penetration          |
-| -------- | -------------------- |
-| `FIRST`  | `<= 1/3`             |
-| `MIDDLE` | `> 1/3` and `<= 2/3` |
-| `FINAL`  | `> 2/3`              |
-
-For bullish Order Blocks:
-
-```
-penetration =
-    (OB High - Candle Low)
-    / (OB High - OB Low)
+```text
+1. Understand the existing architecture
+        ↓
+2. Identify the correct layer
+        ↓
+3. Define/update the domain model if necessary
+        ↓
+4. Implement the smallest isolated change
+        ↓
+5. Add focused tests
+        ↓
+6. Run the complete test suite when appropriate
+        ↓
+7. Update documentation
+        ↓
+8. Review git diff
+        ↓
+9. Commit the change
 ```
 
-For bearish Order Blocks:
-
-```
-penetration =
-    (Candle High - OB Low)
-    / (OB High - OB Low)
-```
-
-## Penetration Metrics
-
-Each historical observation records two different penetration metrics.
-
-### First-Touch Penetration
-
-`penetration` describes only the candle that first touches the Order Block.
-
-This value is used for first-touch zone classification.
-
-### Maximum Order Block Penetration
-
-`max_ob_penetration` records the deepest penetration observed from the first-touch candle through the remaining historical dataset.
-
-The value is normalized and clamped to:
-
-```
-0.0 <= max_ob_penetration <= 1.0
-```
-
-This allows research to distinguish the initial interaction with an Order Block from its maximum subsequent depth.
-
-## Trade Outcome Simulation
-
-Each valid first-touch observation can be evaluated using multiple risk/reward targets.
-
-The current research workflow evaluates:
-
-* `1R`
-* `2R`
-
-Possible outcomes are:
-
-* `WIN`
-* `LOSS`
-* `UNRESOLVED`
-
-An observation may also have no simulated outcome when the calculated entry does not leave positive risk.
-
-## Order Block Zone Statistics
-
-File:
-
-```
-`smartmoney/backtesting/orderblock_stats.py`
-```
-
-Statistics are aggregated by first-touch zone.
-
-The current statistics include:
-
-* Number of touches
-* Zone frequency
-* 1R wins
-* 1R losses
-* 1R unresolved outcomes
-* 2R wins
-* 2R losses
-* 2R unresolved outcomes
-* Resolution rates
-* Win rates calculated from resolved trades
-* Raw success rates calculated from all touches
-* Average first-touch penetration
-* Average maximum Order Block penetration
-* Average MFE
-* Average MAE
-
-Win rate is calculated as:
-
-```
-wins / (wins + losses)
-```
-
-Raw success rate is calculated as:
-
-```
-wins / touches
-```
-
-Unresolved outcomes are excluded from win rate but remain visible in the statistics.
-
-## Order Block Diagnostics
-
-File:
-
-```
-`smartmoney/backtesting/orderblock_diagnostics.py`
-```
-
-Diagnostics provide additional information about observations that do not produce resolved trade outcomes.
-
-For each Order Block zone, diagnostics include:
-
-* Total touches
-* Zero-risk touches
-* Resolved 1R outcomes
-* Unresolved 1R outcomes
-* Resolved 2R outcomes
-* Unresolved 2R outcomes
-
-Unresolved outcomes are also grouped according to how close the first touch occurred to the end of the historical dataset:
-
-* Last 10 candles
-* Last 20 candles
-* Last 50 candles
-* Last 100 candles
-
-This helps distinguish unresolved trades caused by insufficient remaining historical data from other unresolved behavior.
-
-## Running Historical Research
-
-The research script is:
-
-```
-`run_research.py`
-```
-
-Run it with:
-
-```
-python run_research.py
-```
-
-The script evaluates the configured timeframes and prints:
-
-* Candle count
-* Number of observations
-* Zone frequency
-* 1R and 2R win rates
-* 1R and 2R resolution rates
-* Average first-touch penetration
-* Average maximum penetration
-* Zero-risk observations
-* Resolved outcomes
-* Unresolved outcomes
-* Unresolved observations near the end of the dataset
-
-The current research script uses:
-
-```
-NAS100
-```
-
-and the timeframes configured in:
-
-```
-`smartmoney/config.py`
-```
-
-## MT5 and Chart Utilities
-
-MetaTrader 5 integration is covered by unit tests using mocked MT5 responses where possible.
-
-Manual chart visualization is available through:
-
-```
-`scripts/show_chart.py`
-```
-
-This script is intentionally separate from the automated pytest suite because it requires a real MetaTrader 5 environment and displays a chart.
+For trading-execution changes, Demo-account validation should be performed before considering the corresponding execution path ready for production use.
 
 ---
 
-# 39. License
+# 39. Execution Safety
 
-Private project.
+The execution layer is designed to separate analysis from broker interaction.
+
+The following distinction is important:
+
+```text
+Scanner Signal
+    ≠
+Trade Plan
+    ≠
+MT5 Order
+```
+
+A scanner signal represents a detected opportunity.
+
+A Trade Plan represents an executable strategy setup after the required entry, stop-loss, and take-profit stages have succeeded.
+
+An MT5 Order represents an explicit broker execution request.
+
+Automatic execution should only occur after the required validation and risk-management stages have completed.
+
+The current project has validated the MT5 execution infrastructure on a Demo account, but automatic execution from the Live pipeline is intentionally not enabled yet.
