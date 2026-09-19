@@ -65,6 +65,44 @@ def test_mt5_client_sends_order(monkeypatch):
         "retcode": 10009,
     }
 
+def test_mt5_client_sends_close_order(monkeypatch):
+    from smartmoney.trading.mt5_client import MT5Client
+
+    captured = {}
+
+    class FakeMT5Module:
+        def order_send(self, request):
+            captured.update(request)
+            return {"retcode": 10009}
+
+    monkeypatch.setattr(
+        mt5,
+        "order_send",
+        FakeMT5Module().order_send,
+    )
+
+    client = MT5Client()
+
+    request = {
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": "ETHEREUM",
+        "volume": 0.01,
+        "type": mt5.ORDER_TYPE_SELL,
+        "position": 379625952,
+        "price": 2641.45,
+        "deviation": 20,
+        "magic": 234000,
+        "comment": "smartmoney close",
+        "type_time": mt5.ORDER_TIME_GTC,
+        "type_filling": 0,
+    }
+
+    result = client.send_order(request)
+
+    assert result == {"retcode": 10009}
+    assert captured["position"] == 379625952
+    assert captured["type"] == mt5.ORDER_TYPE_SELL
+    
 def test_mt5_client_checks_order(monkeypatch):
     from smartmoney.trading.mt5_client import MT5Client
 
