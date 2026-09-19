@@ -40,6 +40,7 @@ class Scheduler:
         timeframes: list[int],
         candle_count: int,
         interval: int = 3,
+        executor=None,
     ) -> None:
 
         self.provider = provider
@@ -60,7 +61,7 @@ class Scheduler:
         self.candle_count = candle_count
 
         self.interval = interval
-
+        self.executor = executor
         self._running = False
 
     # ---------------------------------------------------------
