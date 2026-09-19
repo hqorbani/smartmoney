@@ -1,11 +1,11 @@
 import time
-
+from smartmoney.trading.execution import ExecutionStatus
 from smartmoney.config import Config
 from smartmoney.core.context_manager import ContextManager
 from smartmoney.core.engine import AnalyzerEngine
 from smartmoney.core.mt5 import MT5DataProvider
 from smartmoney.core.scanner_engine import ScannerEngine
-
+from smartmoney.trading.mt5_broker_executor import MT5BrokerExecutor
 from smartmoney.outputs.output_engine import OutputEngine
 from smartmoney.query.query import Query
 from smartmoney.query.query_engine import QueryEngine
@@ -266,3 +266,39 @@ class Scheduler:
         self.output_engine.publish(
             queried_signals,
         )
+        if self.executor is not None:
+            for signal in queried_signals:
+                trade_plan = getattr(signal, "trade_plan", None)
+                position_size_plan = getattr(signal, "position_size_plan", None)
+
+                if trade_plan is None or position_size_plan is None:
+                    continue
+
+                if getattr(signal, "distance", None) != 0:
+                    continue
+
+                trade_key = (
+                    trade_plan.symbol,
+                    trade_plan.timeframe,
+                    trade_plan.direction.value,
+                    trade_plan.orderblock_index,
+                )
+
+                if trade_key in self._executed_trade_keys:
+                    continue
+
+                signal_executor = MT5BrokerExecutor(
+                    mt5_client=self.executor.mt5_client,
+                    use_real_request=True,
+                    position_size_plan=position_size_plan,
+                )
+
+                result = signal_executor.execute(trade_plan)
+
+                if result.status == ExecutionStatus.EXECUTED:
+                    self._executed_trade_keys.add(trade_key)
+                    print(
+                        f"Demo execution: {trade_plan.symbol} "
+                        f"{trade_plan.direction.value} "
+                        f"{position_size_plan.position_size}"
+                    )
