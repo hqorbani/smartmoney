@@ -13,7 +13,7 @@ from smartmoney.repository.signal_repository import SignalRepository
 from smartmoney.scoring.engine import ScoreEngine
 from smartmoney.services.distance_service import DistanceService
 from smartmoney.models.signal import SignalDirection
-
+from smartmoney.core.logging import get_logger
 
 from smartmoney.core.market_structure_engine import (
     MarketStructureEngine
@@ -42,7 +42,7 @@ class Scheduler:
         interval: int = 3,
         executor=None,
     ) -> None:
-
+        self.logger = get_logger("scheduler")
         self.provider = provider
         self.context_manager = context_manager
 
@@ -94,7 +94,7 @@ class Scheduler:
     # ---------------------------------------------------------
 
     def run_once(self):
-
+        self.logger.info("Scheduler cycle started")
         all_signals = []
 
         # -----------------------------------------
@@ -300,7 +300,20 @@ class Scheduler:
                 )
 
                 result = signal_executor.execute(trade_plan)
-
+                self.logger.info(
+                    "Trade execution | symbol=%s | timeframe=%s | direction=%s | "
+                    "entry=%s | stop_loss=%s | take_profit=%s | volume=%s | "
+                    "status=%s | broker_result=%s",
+                    trade_plan.symbol,
+                    trade_plan.timeframe,
+                    trade_plan.direction.value,
+                    trade_plan.entry_price,
+                    trade_plan.stop_loss,
+                    trade_plan.take_profit,
+                    position_size_plan.position_size,
+                    result.status.value,
+                    result.broker_result,
+                )
                 if result.status == ExecutionStatus.EXECUTED:
                     self._executed_trade_keys.add(trade_key)
                     executed_this_cycle = True

@@ -41,7 +41,7 @@ class Config:
 
     SORT_DESCENDING = False
 
-    TOP_SIGNALS = 10
+    TOP_SIGNALS = 20
 
     MINIMUM_SCORE = 0.0
 
