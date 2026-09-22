@@ -130,12 +130,12 @@ class Scheduler:
                     context,
                 )
 
-                print()
-                print("Structure Events")
+                # print()
+                # print("Structure Events")
 
-                for event in events:
+                # for event in events:
 
-                    print(event.type.name)
+                #     print(event.type.name)
 
                 self.market_structure_engine.update(
                     context,
@@ -226,7 +226,10 @@ class Scheduler:
                         signal,
                         current_price,
                     )
-
+                    # print(
+                    #     f"DISTANCE {signal.symbol} {signal.timeframe} "
+                    #     f"{signal.direction} = {signal.distance}"
+                    # )
                 all_signals.extend(signals)
 
         # -----------------------------------------
@@ -301,8 +304,8 @@ class Scheduler:
                 if result.status == ExecutionStatus.EXECUTED:
                     self._executed_trade_keys.add(trade_key)
                     executed_this_cycle = True
-                    print(
-                        f"Demo execution: {trade_plan.symbol} "
-                        f"{trade_plan.direction.value} "
-                        f"{position_size_plan.position_size}"
-                    )
+                    # print(
+                    #     f"Demo execution: {trade_plan.symbol} "
+                    #     f"{trade_plan.direction.value} "
+                    #     f"{position_size_plan.position_size}"
+                    # )

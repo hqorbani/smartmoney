@@ -126,25 +126,25 @@ class MarketStructureEngine:
         #
 
         print()
-        print(context.symbol, context.timeframe)
+        # print(context.symbol, context.timeframe)
 
-        print("Bias:", structure.bias.name)
+        # print("Bias:", structure.bias.name)
 
-        print("Protected High :", structure.protected_high.price)
-        print("Protected Low  :", structure.protected_low.price)
+        # print("Protected High :", structure.protected_high.price)
+        # print("Protected Low  :", structure.protected_low.price)
 
-        print("Structural High:", structure.structural_high.price)
-        print("Structural Low :", structure.structural_low.price)
+        # print("Structural High:", structure.structural_high.price)
+        # print("Structural Low :", structure.structural_low.price)
 
-        print(
-            "Protected Low Index :",
-            structure.protected_low.swing_index,
-        )
+        # print(
+        #     "Protected Low Index :",
+        #     structure.protected_low.swing_index,
+        # )
 
-        print(
-            "Structural High Index :",
-            structure.structural_high.swing_index,
-        )
+        # print(
+        #     "Structural High Index :",
+        #     structure.structural_high.swing_index,
+        # )
     # ==================================================
     # UNKNOWN
     # ==================================================
@@ -155,7 +155,7 @@ class MarketStructureEngine:
         events: list[StructureEvent],
     ) -> None:
 
-        print("ENTER _handle_unknown")
+        # print("ENTER _handle_unknown")
         structure = context.market_structure
 
         for event in events:
@@ -189,7 +189,7 @@ class MarketStructureEngine:
         events: list[StructureEvent],
     ) -> None:
 
-        print("ENTER _handle_bullish")
+        # print("ENTER _handle_bullish")
 
         structure = context.market_structure
 
@@ -197,13 +197,13 @@ class MarketStructureEngine:
 
             if event.type == StructureEventType.BEARISH_WEAKNESS:
 
-                print("BEARISH WEAKNESS DETECTED")
+                # print("BEARISH WEAKNESS DETECTED")
 
                 structure.bias = MarketBias.TRANSITION
 
                 return
 
-        print("CALLING BOS DETECTOR")
+        # print("CALLING BOS DETECTOR")
 
         self._detect_bullish_bos(context)
     # ==================================================
@@ -380,7 +380,7 @@ class MarketStructureEngine:
         self,
         context: MarketContext,
     ) -> None:
-        print("ENTER _detect_bullish_bos")
+        # print("ENTER _detect_bullish_bos")
         structure = context.market_structure
 
         level = structure.structural_high
@@ -408,11 +408,11 @@ class MarketStructureEngine:
             return
 
         current_close = context.df.iloc[-1]["close"]
-        print(
-            "BOS CHECK*-----------***********************---------",
-            "close =", current_close,
-            "level =", level.price,
-        )
+        # print(
+        #     "BOS CHECK*-----------***********************---------",
+        #     "close =", current_close,
+        #     "level =", level.price,
+        # )
         if current_close <= level.price:
             return
 
@@ -420,10 +420,10 @@ class MarketStructureEngine:
 
         structure.bos_count += 1
 
-        print(
-            "Bullish BOS",
-            structure.bos_count,
-        )       
+        # print(
+        #     "Bullish BOS",
+        #     structure.bos_count,
+        # )       
 
 
     def _is_bullish_displacement(
