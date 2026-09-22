@@ -27,17 +27,10 @@ class EntryAnalyzer(Analyzer):
 
         orderblock = signal.orderblock
 
-        last_candle = context.df.iloc[-1]
-
-        candle_high = float(last_candle["high"])
-        candle_low = float(last_candle["low"])
+        
 
         ob_high = float(orderblock.high)
         ob_low = float(orderblock.low)
-
-        # Price has not reached the Order Block.
-        if candle_high < ob_low or candle_low > ob_high:
-            return
 
         entry_price = (ob_high + ob_low) / 2.0
 
