@@ -17,7 +17,7 @@ class Signal:
     symbol: str | None = None
     timeframe: int | None = None
     strategy: str | None = None
-
+    signal_id: str | None = None
     direction: SignalDirection = SignalDirection.NO_SIGNAL
 
     price_low: float | None = None

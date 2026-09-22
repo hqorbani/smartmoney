@@ -23,6 +23,10 @@ class OrderBlockActiveFVGScanner(Scanner):
                     symbol=context.symbol,
                     timeframe=context.timeframe,
                     strategy="OB + ACTIVE_FVG",
+                    signal_id=(
+                        f"{context.symbol}|{context.timeframe}|OB + ACTIVE_FVG|"
+                        f"{'BUY' if ob.bullish else 'SELL'}|{ob.time.isoformat()}"
+                    ),
                     direction="BUY" if ob.bullish else "SELL",
                     price_low=ob.low,
                     price_high=ob.high,

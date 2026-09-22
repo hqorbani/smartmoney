@@ -301,9 +301,10 @@ class Scheduler:
 
                 result = signal_executor.execute(trade_plan)
                 self.logger.info(
-                    "Trade execution | symbol=%s | timeframe=%s | direction=%s | "
-                    "entry=%s | stop_loss=%s | take_profit=%s | volume=%s | "
-                    "status=%s | broker_result=%s",
+                    "Trade execution | signal_id=%s | symbol=%s | timeframe=%s | "
+                    "direction=%s | entry=%s | stop_loss=%s | take_profit=%s | "
+                    "volume=%s | status=%s | broker_result=%s",
+                    getattr(signal, "signal_id", None),
                     trade_plan.symbol,
                     trade_plan.timeframe,
                     trade_plan.direction.value,
