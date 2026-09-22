@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-
 import MetaTrader5 as mt5
-
+from smartmoney.symbol_config import SYMBOL_CONFIG
 
 @dataclass(slots=True)
 class Config:
@@ -11,26 +10,15 @@ class Config:
     # ----------------------------
     RISK_PERCENT = 1.0
     
-    HISTORY_BARS = 3000
+    HISTORY_BARS = 600
 
     SCAN_INTERVAL = 3
 
-    SYMBOLS = [
-        "NAS100",
-    ]
+    SYMBOLS = list(SYMBOL_CONFIG.keys())
     #----------
-    #-SYMBOLS = [
-    #-    "NAS100": 1,
-    #-    "XAUUSD": 0.5,
-    #-    "BITCOIN": 0.5,
-    #-    "EURUSD": 0.0001,
-    #-    "NZDCAD": 0.0001,
-    #-    "AUDUSD": 0.0001,
-    #-    "GBPUSD": 0.0001,
-    #-]
 
     TIMEFRAMES = [
-        # mt5.TIMEFRAME_M1,
+        mt5.TIMEFRAME_M1,
         mt5.TIMEFRAME_M3,
         mt5.TIMEFRAME_M5,
         # mt5.TIMEFRAME_M15,
@@ -44,11 +32,7 @@ class Config:
     SWING_LEFT = 2
     SWING_RIGHT = 2
 
-    # ----------------------------
-    # FVG
-    # ----------------------------
 
-    MIN_FVG_SIZE = 1
     # ----------------------------
     # Query
     # ----------------------------
@@ -57,7 +41,7 @@ class Config:
 
     SORT_DESCENDING = False
 
-    TOP_SIGNALS = 40
+    TOP_SIGNALS = 10
 
     MINIMUM_SCORE = 0.0
 

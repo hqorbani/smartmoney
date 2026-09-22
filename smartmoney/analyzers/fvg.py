@@ -1,4 +1,4 @@
-from smartmoney.config import Config
+from smartmoney.symbol_config import SYMBOL_CONFIG
 from smartmoney.analyzers.base import Analyzer
 from smartmoney.models.fvg import FVG, FVGStatus
 
@@ -10,7 +10,7 @@ class FVGAnalyzer(Analyzer):
     def analyze(self, context):
 
         df = context.df
-
+        min_fvg_size = SYMBOL_CONFIG[context.symbol]["min_fvg_size"]
         highs = df["high"].to_numpy()
         lows = df["low"].to_numpy()
         times = df["time"]
@@ -36,7 +36,7 @@ class FVGAnalyzer(Analyzer):
                 gap_high = lows[c3]
                 gap_low = highs[c1]
 
-                if (gap_high - gap_low) >= Config.MIN_FVG_SIZE:
+                if (gap_high - gap_low) >= min_fvg_size:
 
                     exists = any(
                         fvg.start_time == times.iloc[c1]
@@ -68,7 +68,7 @@ class FVGAnalyzer(Analyzer):
                 gap_high = lows[c1]
                 gap_low = highs[c3]
 
-                if (gap_high - gap_low) >= Config.MIN_FVG_SIZE:
+                if (gap_high - gap_low) >= min_fvg_size:
 
                     exists = any(
                         fvg.start_time == times.iloc[c1]
