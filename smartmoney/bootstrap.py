@@ -1,5 +1,5 @@
 from smartmoney.config import Config
-
+from smartmoney.core.signal_scanner import SignalScanner
 from smartmoney.core.discovery import discover
 from smartmoney.core.context import MarketContext
 from smartmoney.core.context_manager import ContextManager
@@ -135,7 +135,22 @@ def _create_output_engine(
 
     return engine
 
+def create_signal_scanner(
+    provider: MT5DataProvider,
+) -> SignalScanner:
 
+    return SignalScanner(
+        provider=provider,
+        context_manager=create_context_manager(),
+        analyzer_engine=_create_analyzer_engine(),
+        scanner_engine=_create_scanner_engine(),
+        market_structure_engine=create_market_structure_engine(),
+        structure_event_engine=create_structure_event_engine(),
+        distance_service=DistanceService(),
+        symbols=Config.SYMBOLS,
+        timeframes=Config.TIMEFRAMES,
+        candle_count=Config.HISTORY_BARS,
+    )
 # ==========================================================
 # Scheduler
 # ==========================================================
