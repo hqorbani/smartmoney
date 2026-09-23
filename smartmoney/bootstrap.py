@@ -117,7 +117,9 @@ def _create_score_engine() -> ScoreEngine:
 # Output Engine
 # ==========================================================
 
-def _create_output_engine() -> OutputEngine:
+def _create_output_engine(
+    include_csv: bool = True,
+) -> OutputEngine:
 
     engine = OutputEngine()
 
@@ -127,7 +129,8 @@ def _create_output_engine() -> OutputEngine:
     )
 
     for output in outputs:
-
+        if not include_csv and output.__class__.__name__ == "CsvOutput":
+            continue
         engine.add(output)
 
     return engine
@@ -173,7 +176,7 @@ def create_live_scheduler() -> Scheduler:
 
         scanner_engine=_create_scanner_engine(),
 
-        output_engine=_create_output_engine(),
+        output_engine=_create_output_engine(include_csv=False),
 
         score_engine=_create_score_engine(),
 
