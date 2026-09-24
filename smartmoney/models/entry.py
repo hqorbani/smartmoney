@@ -21,3 +21,5 @@ class EntryPlan:
     orderblock: OrderBlock
 
     fvg: FVG
+
+    zones: list[EntryZone]
