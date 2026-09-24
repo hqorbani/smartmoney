@@ -305,9 +305,6 @@ class Scheduler:
                 if trade_plan is None or position_size_plan is None:
                     continue
 
-                if getattr(signal, "distance", None) != 0:
-                    continue
-
                 trade_key = (
                     trade_plan.symbol,
                     trade_plan.timeframe,
