@@ -13,35 +13,48 @@ def make_context(rows):
     df["time"] = pd.to_datetime(df["time"])
 
     return MarketContext(
-        symbol="TEST",
+        symbol="EURUSD",
         timeframe=15,
         df=df,
     )
 def test_bullish_entry_is_created_when_price_is_inside_orderblock():
 
-    context = make_context([
+    rows = []
+
+    for i in range(10):
+        rows.append({
+            "time": f"2026-01-01 {10 + i // 4:02d}:{(i % 4) * 15:02d}",
+            "open": 100,
+            "high": 101,
+            "low": 99,
+            "close": 100,
+        })
+
+    rows.extend([
         {
-            "time": "2026-01-01 10:00",
+            "time": "2026-01-01 12:30",
             "open": 101,
             "high": 103,
             "low": 98,
             "close": 99,
         },
         {
-            "time": "2026-01-01 10:15",
+            "time": "2026-01-01 12:45",
             "open": 99,
             "high": 108,
             "low": 99,
             "close": 107,
         },
         {
-            "time": "2026-01-01 10:30",
+            "time": "2026-01-01 13:00",
             "open": 107,
             "high": 112,
             "low": 105,
             "close": 110,
         },
     ])
+
+    context = make_context(rows)
 
     FVGAnalyzer().analyze(context)
     OrderBlockAnalyzer().analyze(context)
@@ -50,9 +63,9 @@ def test_bullish_entry_is_created_when_price_is_inside_orderblock():
     assert context.signal.direction == SignalDirection.BUY
 
     # Simulate price returning to the OB
-    context.df.loc[2, "high"] = 102
-    context.df.loc[2, "low"] = 99
-    context.df.loc[2, "close"] = 100
+    context.df.loc[12, "high"] = 102
+    context.df.loc[12, "low"] = 99
+    context.df.loc[12, "close"] = 100
 
     EntryAnalyzer().analyze(context)
 
@@ -61,32 +74,44 @@ def test_bullish_entry_is_created_when_price_is_inside_orderblock():
     assert context.entry_plan.orderblock is context.orderblocks[0]
     assert context.entry_plan.fvg is context.fvgs[0]
 
-
 def test_bearish_entry_is_created_when_price_is_inside_orderblock():
 
-    context = make_context([
+    rows = []
+
+    for i in range(10):
+        rows.append({
+            "time": f"2026-01-01 {10 + i // 4:02d}:{(i % 4) * 15:02d}",
+            "open": 100,
+            "high": 101,
+            "low": 99,
+            "close": 100,
+        })
+
+    rows.extend([
         {
-            "time": "2026-01-01 10:00",
+            "time": "2026-01-01 12:30",
             "open": 99,
             "high": 103,
             "low": 98,
             "close": 102,
         },
         {
-            "time": "2026-01-01 10:15",
+            "time": "2026-01-01 12:45",
             "open": 102,
             "high": 102,
             "low": 93,
             "close": 94,
         },
         {
-            "time": "2026-01-01 10:30",
+            "time": "2026-01-01 13:00",
             "open": 94,
             "high": 96,
             "low": 90,
             "close": 91,
         },
     ])
+
+    context = make_context(rows)
 
     FVGAnalyzer().analyze(context)
     OrderBlockAnalyzer().analyze(context)
@@ -95,17 +120,16 @@ def test_bearish_entry_is_created_when_price_is_inside_orderblock():
     assert context.signal.direction == SignalDirection.SELL
 
     # Simulate price returning to the OB
-    context.df.loc[2, "high"] = 102
-    context.df.loc[2, "low"] = 99
-    context.df.loc[2, "close"] = 101
-
+    context.df.loc[12, "high"] = 102
+    context.df.loc[12, "low"] = 99
+    context.df.loc[12, "close"] = 101
     EntryAnalyzer().analyze(context)
 
     assert context.entry_plan is not None
     assert context.entry_plan.entry_price == 100.5
     assert context.entry_plan.orderblock is context.orderblocks[0]
-    assert context.entry_plan.fvg is context.fvgs[0]
-    
+    assert context.entry_plan.fvg is context.fvgs[0]    
+
 def test_no_entry_plan_without_signal():
 
     context = make_context([

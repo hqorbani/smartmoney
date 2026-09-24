@@ -29,8 +29,11 @@ class EntryAnalyzer(Analyzer):
 
         
 
-        ob_high = float(orderblock.high)
-        ob_low = float(orderblock.low)
+        if orderblock.expanded_high is None or orderblock.expanded_low is None:
+            return
+
+        ob_high = float(orderblock.expanded_high)
+        ob_low = float(orderblock.expanded_low)
 
         entry_price = (ob_high + ob_low) / 2.0
 
