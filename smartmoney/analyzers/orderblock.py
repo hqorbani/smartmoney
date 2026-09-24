@@ -158,17 +158,18 @@ class OrderBlockAnalyzer(Analyzer):
                 candle_low = lows[i]
                 candle_high = highs[i]
 
-                if ob.bullish:
+                if ob.expanded_high is None or ob.expanded_low is None:
+                    continue
 
-                    if candle_low <= ob.high:
+                if ob.bullish:
+                    if candle_low <= ob.expanded_high:
                         ob.mitigated = True
                         ob.mitigation_index = i
                         ob.mitigation_time = times.iloc[i]
                         break
 
                 else:
-
-                    if candle_high >= ob.low:
+                    if candle_high >= ob.expanded_low:
                         ob.mitigated = True
                         ob.mitigation_index = i
                         ob.mitigation_time = times.iloc[i]
