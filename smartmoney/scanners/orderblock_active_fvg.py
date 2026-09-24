@@ -17,8 +17,21 @@ class OrderBlockActiveFVGScanner(Scanner):
             if ob.related_fvg.status != FVGStatus.ACTIVE:
                 continue
 
+            if ob.mitigated:
+                continue
+
             if ob.expanded_low is None or ob.expanded_high is None:
                 continue
+
+            if context.current_bid is None or context.current_ask is None:
+                continue
+
+            if ob.bullish:
+                if context.current_ask <= ob.expanded_high:
+                    continue
+            else:
+                if context.current_bid >= ob.expanded_low:
+                    continue
 
             signals.append(
 

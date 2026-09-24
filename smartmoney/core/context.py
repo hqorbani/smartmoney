@@ -25,7 +25,8 @@ class MarketContext:
     df: pd.DataFrame
 
     last_candle_time: pd.Timestamp | None = None
-
+    current_bid: float | None = None
+    current_ask: float | None = None
     swings: list[Swing] = field(default_factory=list)
 
     structures: list[Structure] = field(default_factory=list)
