@@ -243,3 +243,137 @@ def test_no_entry_plan_when_price_is_outside_bearish_orderblock():
 
     assert context.signal.direction == SignalDirection.SELL
     assert context.entry_plan is None
+
+def test_bullish_entry_zones_are_split_into_three_equal_parts():
+
+    rows = []
+
+    for i in range(10):
+        rows.append({
+            "time": f"2026-01-01 {10 + i // 4:02d}:{(i % 4) * 15:02d}",
+            "open": 100,
+            "high": 101,
+            "low": 99,
+            "close": 100,
+        })
+
+    rows.extend([
+        {
+            "time": "2026-01-01 12:30",
+            "open": 101,
+            "high": 103,
+            "low": 98,
+            "close": 99,
+        },
+        {
+            "time": "2026-01-01 12:45",
+            "open": 99,
+            "high": 108,
+            "low": 99,
+            "close": 107,
+        },
+        {
+            "time": "2026-01-01 13:00",
+            "open": 107,
+            "high": 112,
+            "low": 105,
+            "close": 110,
+        },
+    ])
+
+    context = make_context(rows)
+
+    FVGAnalyzer().analyze(context)
+    OrderBlockAnalyzer().analyze(context)
+    SignalAnalyzer().analyze(context)
+    EntryAnalyzer().analyze(context)
+
+    zones = context.entry_plan.zones
+
+    assert [zone.name for zone in zones] == [
+        "INITIAL",
+        "MIDDLE",
+        "FINAL",
+    ]
+
+    ob = context.orderblocks[0]
+
+    low = ob.expanded_low
+    high = ob.expanded_high
+    zone_size = (high - low) / 3.0
+
+    assert zones[0].price_low == low
+    assert zones[0].price_high == low + zone_size
+
+    assert zones[1].price_low == low + zone_size
+    assert zones[1].price_high == low + (zone_size * 2)
+
+    assert zones[2].price_low == low + (zone_size * 2)
+    assert zones[2].price_high == high
+
+def test_bearish_entry_zones_follow_price_direction():
+
+    rows = []
+
+    for i in range(10):
+        rows.append({
+            "time": f"2026-01-01 {10 + i // 4:02d}:{(i % 4) * 15:02d}",
+            "open": 100,
+            "high": 101,
+            "low": 99,
+            "close": 100,
+        })
+
+    rows.extend([
+        {
+            "time": "2026-01-01 12:30",
+            "open": 99,
+            "high": 103,
+            "low": 98,
+            "close": 102,
+        },
+        {
+            "time": "2026-01-01 12:45",
+            "open": 102,
+            "high": 102,
+            "low": 93,
+            "close": 94,
+        },
+        {
+            "time": "2026-01-01 13:00",
+            "open": 94,
+            "high": 96,
+            "low": 90,
+            "close": 91,
+        },
+    ])
+
+    context = make_context(rows)
+
+    FVGAnalyzer().analyze(context)
+    OrderBlockAnalyzer().analyze(context)
+    SignalAnalyzer().analyze(context)
+    EntryAnalyzer().analyze(context)
+
+    zones = context.entry_plan.zones
+
+    assert [zone.name for zone in zones] == [
+        "INITIAL",
+        "MIDDLE",
+        "FINAL",
+    ]
+
+    ob = context.orderblocks[0]
+
+    low = ob.expanded_low
+    high = ob.expanded_high
+    zone_size = (high - low) / 3.0
+
+    assert zones[0].price_low == high - zone_size
+    assert zones[0].price_high == high
+
+    assert zones[1].price_low == high - (zone_size * 2)
+    assert zones[1].price_high == high - zone_size
+
+    assert zones[2].price_low == low
+    assert zones[2].price_high == high - (zone_size * 2)    
