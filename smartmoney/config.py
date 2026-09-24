@@ -49,7 +49,7 @@ class Config:
 
     RR_RATIO = 2.0
     ATR_PERIOD = 11
-    
+    OB_EXPANSION_FACTOR = 0.25
     # ----------------------------
     # Debug
     # ----------------------------

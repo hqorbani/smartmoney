@@ -20,7 +20,8 @@ class OrderBlock:
     close: float
 
     bullish: bool
-
+    expanded_high: float | None = None
+    expanded_low: float | None = None
     # FVG متناظر با این Order Block
     related_fvg: FVG | None = None
 

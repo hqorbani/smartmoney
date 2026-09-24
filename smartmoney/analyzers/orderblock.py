@@ -1,13 +1,19 @@
+import pandas as pd
+
 from smartmoney.analyzers.base import Analyzer
 from smartmoney.models.orderblock import OrderBlock
 from smartmoney.config import Config
-
+from smartmoney.services.atr_service import ATRService
 
 class OrderBlockAnalyzer(Analyzer):
     priority = 30
 
     def analyze(self, context):
         df = context.df
+        atr_series = ATRService().calculate(
+            df,
+            Config.ATR_PERIOD,
+        )
 
         opens = df["open"].to_numpy()
         highs = df["high"].to_numpy()
@@ -39,6 +45,15 @@ class OrderBlockAnalyzer(Analyzer):
                                 for ob in context.orderblocks
                             ):
                                 break
+                            atr_ob = atr_series.iloc[i]
+
+                            if pd.notna(atr_ob):
+                                expansion = atr_ob * Config.OB_EXPANSION_FACTOR
+                                expanded_high = highs[i] + expansion
+                                expanded_low = lows[i] - expansion
+                            else:
+                                expanded_high = None
+                                expanded_low = None
 
                             context.orderblocks.append(
                                 OrderBlock(
@@ -50,6 +65,8 @@ class OrderBlockAnalyzer(Analyzer):
                                     close=closes[i],
                                     bullish=True,
                                     related_fvg=fvg,
+                                    expanded_high=expanded_high,
+                                    expanded_low=expanded_low
                                 )
                             )
 
