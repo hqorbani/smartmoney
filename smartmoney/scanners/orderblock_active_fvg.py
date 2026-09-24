@@ -17,6 +17,9 @@ class OrderBlockActiveFVGScanner(Scanner):
             if ob.related_fvg.status != FVGStatus.ACTIVE:
                 continue
 
+            if ob.expanded_low is None or ob.expanded_high is None:
+                continue
+
             signals.append(
 
                 Signal(
@@ -28,8 +31,8 @@ class OrderBlockActiveFVGScanner(Scanner):
                         f"{'BUY' if ob.bullish else 'SELL'}|{ob.time.isoformat()}"
                     ),
                     direction="BUY" if ob.bullish else "SELL",
-                    price_low=ob.low,
-                    price_high=ob.high,
+                    price_low=ob.expanded_low,
+                    price_high=ob.expanded_high,
                     time=ob.time,
                     score=1.0,
                     orderblock=ob,
