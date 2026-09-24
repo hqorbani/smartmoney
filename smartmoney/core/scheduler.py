@@ -20,6 +20,12 @@ from smartmoney.core.market_structure_engine import (
 )
 
 from smartmoney.core.structure_event_engine import StructureEventEngine
+from smartmoney.models.orderblock import (
+    Attempt1Status,
+    Attempt2Status,
+    OrderBlockStatus,
+)
+from smartmoney.services.zone_entry_service import ZoneEntryService
 
 class Scheduler:
 
@@ -55,7 +61,7 @@ class Scheduler:
         self.repository = repository
         self.query_engine = query_engine
         self.distance_service = distance_service
-        
+        self.zone_entry_service = ZoneEntryService()
         self.symbols = symbols
         self.timeframes = timeframes
         self.candle_count = candle_count
@@ -283,6 +289,15 @@ class Scheduler:
             for signal in queried_signals:
                 trade_plan = getattr(signal, "trade_plan", None)
                 position_size_plan = getattr(signal, "position_size_plan", None)
+                entry_plan = getattr(signal, "entry_plan", None)
+                orderblock = getattr(signal, "orderblock", None)
+
+                if entry_plan is None or orderblock is None:
+                    continue
+
+                current_price = getattr(signal, "current_price", None)
+                if current_price is None:
+                    continue
 
                 if trade_plan is None or position_size_plan is None:
                     continue
@@ -296,10 +311,64 @@ class Scheduler:
                     trade_plan.direction.value,
                     trade_plan.orderblock_index,
                 )
+
                 if executed_this_cycle:
                     break
 
                 if trade_key in self._executed_trade_keys:
+                    continue
+
+                attempt_zone = None
+
+                initial_zone = next(
+                    zone
+                    for zone in entry_plan.zones
+                    if zone.name == "INITIAL"
+                )
+                middle_zone = next(
+                    zone
+                    for zone in entry_plan.zones
+                    if zone.name == "MIDDLE"
+                )
+
+                if orderblock.attempt1_status == Attempt1Status.NOT_USED:
+                    if self.zone_entry_service.is_first_entry(
+                        orderblock,
+                        "INITIAL",
+                        current_price,
+                        initial_zone.price_low,
+                        initial_zone.price_high,
+                    ):
+                        attempt_zone = "INITIAL"
+
+                elif (
+                    orderblock.attempt1_status == Attempt1Status.FAILED
+                    and orderblock.attempt2_status == Attempt2Status.AVAILABLE
+                ):
+                    if self.zone_entry_service.is_first_entry(
+                        orderblock,
+                        "MIDDLE",
+                        current_price,
+                        middle_zone.price_low,
+                        middle_zone.price_high,
+                    ):
+                        attempt_zone = "MIDDLE"
+
+                if attempt_zone is None:
+                    continue
+
+                if self._has_active_position(trade_plan.symbol):
+                    self.logger.info(
+                        "Entry skipped: active position already exists for this symbol."
+                    )
+
+                    if attempt_zone == "INITIAL":
+                        orderblock.attempt1_status = Attempt1Status.FAILED
+                        orderblock.attempt2_status = Attempt2Status.AVAILABLE
+                    else:
+                        orderblock.attempt2_status = Attempt2Status.FAILED
+                        orderblock.status = OrderBlockStatus.CONSUMED
+
                     continue
 
                 signal_executor = MT5BrokerExecutor(
@@ -324,11 +393,22 @@ class Scheduler:
                     result.status.value,
                     result.broker_result,
                 )
+                if attempt_zone == "INITIAL":
+                    if result.status == ExecutionStatus.EXECUTED:
+                        orderblock.attempt1_status = Attempt1Status.SUCCESS
+                        orderblock.status = OrderBlockStatus.CONSUMED
+                    else:
+                        orderblock.attempt1_status = Attempt1Status.FAILED
+                        orderblock.attempt2_status = Attempt2Status.AVAILABLE
+
+                elif attempt_zone == "MIDDLE":
+                    if result.status == ExecutionStatus.EXECUTED:
+                        orderblock.attempt2_status = Attempt2Status.SUCCESS
+                    else:
+                        orderblock.attempt2_status = Attempt2Status.FAILED
+
+                    orderblock.status = OrderBlockStatus.CONSUMED
+
                 if result.status == ExecutionStatus.EXECUTED:
                     self._executed_trade_keys.add(trade_key)
                     executed_this_cycle = True
-                    # print(
-                    #     f"Demo execution: {trade_plan.symbol} "
-                    #     f"{trade_plan.direction.value} "
-                    #     f"{position_size_plan.position_size}"
-                    # )
