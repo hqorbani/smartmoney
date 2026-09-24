@@ -75,8 +75,10 @@ class EntryAnalyzer(Analyzer):
                 price_high=ob_high - (zone_size * 2),
             )
 
-        entry_price = (ob_high + ob_low) / 2.0
-
+        if signal.direction == SignalDirection.BUY:
+            entry_price = ob_high
+        else:
+            entry_price = ob_low
         context.entry_plan = EntryPlan(
             entry_price=entry_price,
             orderblock=orderblock,

@@ -21,14 +21,14 @@ class StopLossAnalyzer(Analyzer):
 
         if context.signal.direction == SignalDirection.BUY:
 
-            stop_loss = float(orderblock.low)
+            stop_loss = float(orderblock.expanded_low)
 
             if stop_loss >= entry_price:
                 return
 
         elif context.signal.direction == SignalDirection.SELL:
 
-            stop_loss = float(orderblock.high)
+            stop_loss = float(orderblock.expanded_high)
 
             if stop_loss <= entry_price:
                 return

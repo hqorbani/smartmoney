@@ -1,7 +1,10 @@
 from smartmoney.scanners.base import Scanner
 from smartmoney.models.signal import Signal
 from smartmoney.models.fvg import FVGStatus
-
+from smartmoney.models.orderblock import (
+    Attempt1Status,
+    Attempt2Status,
+)
 
 class OrderBlockActiveFVGScanner(Scanner):
 
@@ -26,12 +29,11 @@ class OrderBlockActiveFVGScanner(Scanner):
             if context.current_bid is None or context.current_ask is None:
                 continue
 
-            if ob.bullish:
-                if context.current_ask <= ob.expanded_high:
-                    continue
-            else:
-                if context.current_bid >= ob.expanded_low:
-                    continue
+            if (
+                ob.attempt1_status != Attempt1Status.NOT_USED
+                and ob.attempt2_status != Attempt2Status.AVAILABLE
+            ):
+                continue
 
             signals.append(
 
