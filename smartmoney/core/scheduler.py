@@ -66,7 +66,16 @@ class Scheduler:
         self._running = False
 
     # ---------------------------------------------------------
+    def _has_active_position(self, symbol: str) -> bool:
+        if self.executor is None:
+            return False
 
+        positions = self.executor.mt5_client.positions_get(
+            symbol=symbol,
+        )
+
+        return bool(positions)
+    
     def start(self):
 
         self.provider.connect()
