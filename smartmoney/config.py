@@ -48,7 +48,7 @@ class Config:
 
 
     RR_RATIO = 2.0
-
+    ATR_PERIOD = 11
     
     # ----------------------------
     # Debug
