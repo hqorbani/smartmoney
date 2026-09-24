@@ -52,3 +52,5 @@ class OrderBlock:
     attempt1_status: Attempt1Status = Attempt1Status.NOT_USED
     attempt2_status: Attempt2Status = Attempt2Status.NOT_AVAILABLE
     status: OrderBlockStatus = OrderBlockStatus.ACTIVE
+    initial_zone_inside: bool = False
+    middle_zone_inside: bool = False

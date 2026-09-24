@@ -523,3 +523,20 @@ def test_orderblock_expansion_uses_atr_of_exact_orderblock_candle():
 
     assert ob.expanded_high == 101 + expected_expansion
     assert ob.expanded_low == 95 - expected_expansion
+
+def test_orderblock_zone_entry_state_is_persistent():
+    ob = OrderBlock(
+        index=1,
+        time=pd.Timestamp("2026-01-01"),
+        open=100.0,
+        high=105.0,
+        low=95.0,
+        close=102.0,
+        bullish=True,
+    )
+
+    ob.initial_zone_inside = True
+    ob.middle_zone_inside = True
+
+    assert ob.initial_zone_inside is True
+    assert ob.middle_zone_inside is True    
