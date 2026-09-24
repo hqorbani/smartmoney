@@ -10,7 +10,7 @@ def make_context(rows):
     df["time"] = pd.to_datetime(df["time"])
 
     return MarketContext(
-        symbol="TEST",
+        symbol="EURUSD",
         timeframe=15,
         df=df,
     )
@@ -357,3 +357,69 @@ def test_bearish_orderblock_is_mitigated_when_price_enters_zone():
     assert ob.mitigated is True    
     assert ob.mitigation_index == 3
     assert ob.mitigation_time == pd.Timestamp("2026-01-01 10:45")
+
+def test_orderblock_atr_uses_exact_orderblock_candle():
+    context = make_context([
+        {
+            "time": "2026-01-01 10:00",
+            "open": 101,
+            "high": 103,
+            "low": 98,
+            "close": 99,
+        },
+        {
+            "time": "2026-01-01 10:15",
+            "open": 99,
+            "high": 108,
+            "low": 99,
+            "close": 107,
+        },
+        {
+            "time": "2026-01-01 10:30",
+            "open": 107,
+            "high": 112,
+            "low": 105,
+            "close": 110,
+        },
+    ])
+
+    FVGAnalyzer().analyze(context)
+    OrderBlockAnalyzer().analyze(context)
+
+    ob = context.orderblocks[0]
+
+    assert ob.index == 0
+
+def test_orderblock_without_valid_atr_remains_unchanged():
+    context = make_context([
+        {
+            "time": "2026-01-01 10:00",
+            "open": 101,
+            "high": 103,
+            "low": 98,
+            "close": 99,
+        },
+        {
+            "time": "2026-01-01 10:15",
+            "open": 99,
+            "high": 108,
+            "low": 99,
+            "close": 107,
+        },
+        {
+            "time": "2026-01-01 10:30",
+            "open": 107,
+            "high": 112,
+            "low": 105,
+            "close": 110,
+        },
+    ])
+
+    FVGAnalyzer().analyze(context)
+    OrderBlockAnalyzer().analyze(context)
+
+    ob = context.orderblocks[0]
+
+    assert ob.index == 0
+    assert ob.low == 98
+    assert ob.high == 103        
