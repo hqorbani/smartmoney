@@ -21,6 +21,9 @@ class MT5Client:
     def account_info(self):
         return mt5.account_info()
 
+    def positions_get(self, symbol: str | None = None):
+        return mt5.positions_get(symbol=symbol)
+
     def symbol_info(self, symbol: str):
         return mt5.symbol_info(symbol)
 
