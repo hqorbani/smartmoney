@@ -5,6 +5,15 @@ from smartmoney.models.orderblock import OrderBlock
 
 
 @dataclass
+class EntryZone:
+
+    name: str
+
+    price_low: float
+    price_high: float
+
+
+@dataclass
 class EntryPlan:
 
     entry_price: float
