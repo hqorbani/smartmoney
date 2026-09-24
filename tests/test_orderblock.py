@@ -3,7 +3,7 @@ import pandas as pd
 from smartmoney.analyzers.fvg import FVGAnalyzer
 from smartmoney.analyzers.orderblock import OrderBlockAnalyzer
 from smartmoney.core.context import MarketContext
-
+from smartmoney.models.orderblock import OrderBlock
 
 def make_context(rows):
     df = pd.DataFrame(rows)
@@ -422,4 +422,104 @@ def test_orderblock_without_valid_atr_remains_unchanged():
 
     assert ob.index == 0
     assert ob.low == 98
-    assert ob.high == 103        
+    assert ob.high == 103
+
+def test_orderblock_expansion_formula():
+    context = make_context([
+        {
+            "time": "2026-01-01 10:00",
+            "open": 101,
+            "high": 103,
+            "low": 98,
+            "close": 99,
+        },
+        {
+            "time": "2026-01-01 10:15",
+            "open": 99,
+            "high": 108,
+            "low": 99,
+            "close": 107,
+        },
+        {
+            "time": "2026-01-01 10:30",
+            "open": 107,
+            "high": 112,
+            "low": 105,
+            "close": 110,
+        },
+    ])
+
+    ob = OrderBlock(
+        index=0,
+        time=context.df["time"].iloc[0],
+        open=101,
+        high=103,
+        low=98,
+        close=99,
+        bullish=True,
+    )
+
+    atr_ob = 4.0
+    expansion_factor = 0.25
+    expansion = atr_ob * expansion_factor
+
+    ob.expanded_high = ob.high + expansion
+    ob.expanded_low = ob.low - expansion
+
+    assert ob.expanded_high == 104.0
+    assert ob.expanded_low == 97.0
+
+def test_orderblock_expansion_uses_atr_of_exact_orderblock_candle():
+    rows = []
+
+    for i in range(10):
+        rows.append({
+            "time": f"2026-01-01 {10 + i // 4:02d}:{(i % 4) * 15:02d}",
+            "open": 100,
+            "high": 101,
+            "low": 99,
+            "close": 100,
+        })
+
+    rows.extend([
+        {
+            "time": "2026-01-01 12:30",
+            "open": 100,
+            "high": 101,
+            "low": 95,
+            "close": 96,
+        },
+        {
+            "time": "2026-01-01 12:45",
+            "open": 96,
+            "high": 108,
+            "low": 96,
+            "close": 107,
+        },
+        {
+            "time": "2026-01-01 13:00",
+            "open": 107,
+            "high": 112,
+            "low": 105,
+            "close": 110,
+        },
+    ])
+
+    context = make_context(rows)
+
+    FVGAnalyzer().analyze(context)
+    OrderBlockAnalyzer().analyze(context)
+
+    assert len(context.orderblocks) == 1
+
+    ob = context.orderblocks[0]
+
+    assert ob.index == 10
+    assert ob.expanded_high is not None
+    assert ob.expanded_low is not None
+
+    expected_atr = 2.363636363636364
+    expected_expansion = expected_atr * 0.25
+
+    assert ob.expanded_high == 101 + expected_expansion
+    assert ob.expanded_low == 95 - expected_expansion
