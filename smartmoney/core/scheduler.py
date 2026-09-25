@@ -217,7 +217,46 @@ class Scheduler:
                             "position_size_plan",
                             context.position_size_plan,
                         )
+                        execution_price = (
+                            context.current_ask
+                            if signal.direction == SignalDirection.BUY
+                            else context.current_bid
+                        )
 
+                        signal.status = "WAIT_ZONE"
+
+                        if execution_price is not None and context.entry_plan is not None:
+                            initial_zone = next(
+                                zone
+                                for zone in context.entry_plan.zones
+                                if zone.name == "INITIAL"
+                            )
+
+                            middle_zone = next(
+                                zone
+                                for zone in context.entry_plan.zones
+                                if zone.name == "MIDDLE"
+                            )
+
+                            if signal.orderblock.attempt1_status == Attempt1Status.NOT_USED:
+                                if (
+                                    initial_zone.price_low
+                                    <= execution_price
+                                    <= initial_zone.price_high
+                                ):
+                                    signal.status = "READY"
+
+                            elif (
+                                signal.orderblock.attempt1_status == Attempt1Status.FAILED
+                                and signal.orderblock.attempt2_status
+                                == Attempt2Status.AVAILABLE
+                            ):
+                                if (
+                                    middle_zone.price_low
+                                    <= execution_price
+                                    <= middle_zone.price_high
+                                ):
+                                    signal.status = "READY"
                         signal.direction = original_direction
 
                         context.signal = original_context_signal
@@ -253,21 +292,15 @@ class Scheduler:
         # -----------------------------------------
 
         query = Query(
-
             minimum_score=Config.MINIMUM_SCORE,
-
+            strategy="OB + ACTIVE_FVG",
             sort_by=Config.SORT_BY,
-
             descending=Config.SORT_DESCENDING,
-
             limit=Config.TOP_SIGNALS,
-
         )
 
         queried_signals = self.query_engine.query(
-
             self.repository.all(),
-
             query,
 
         )
