@@ -1,3 +1,4 @@
+from smartmoney.config import Config
 from smartmoney.scanners.base import Scanner
 from smartmoney.models.signal import Signal
 from smartmoney.models.fvg import FVGStatus
@@ -28,7 +29,17 @@ class OrderBlockActiveFVGScanner(Scanner):
 
             if context.current_bid is None or context.current_ask is None:
                 continue
+            ob_index = context.df.index[
+                context.df["time"] == ob.time
+            ]
 
+            if len(ob_index) == 0:
+                continue
+
+            distance = len(context.df) - 1 - ob_index[0]
+
+            if distance < Config.OB_MIN_CANDLE_DISTANCE:
+                continue
             if (
                 ob.attempt1_status != Attempt1Status.NOT_USED
                 and ob.attempt2_status != Attempt2Status.AVAILABLE
