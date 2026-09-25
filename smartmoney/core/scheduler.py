@@ -179,7 +179,10 @@ class Scheduler:
                             signal.direction = SignalDirection.SELL
 
                         context.signal = signal
+                        tick = self.provider.get_current_tick(signal.symbol)
 
+                        context.current_bid = tick.bid
+                        context.current_ask = tick.ask
                         self.analyzer_engine.run_from_priority(
                             context,
                             50,
