@@ -22,7 +22,7 @@ class Attempt2Status(Enum):
 class OrderBlockStatus(Enum):
     ACTIVE = "Active"
     CONSUMED = "Consumed"
-
+    INVALID = "Invalid"
 
 @dataclass(slots=True)
 class OrderBlock:

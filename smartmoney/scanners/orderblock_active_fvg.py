@@ -5,6 +5,7 @@ from smartmoney.models.fvg import FVGStatus
 from smartmoney.models.orderblock import (
     Attempt1Status,
     Attempt2Status,
+    OrderBlockStatus,
 )
 
 class OrderBlockActiveFVGScanner(Scanner):
@@ -29,6 +30,23 @@ class OrderBlockActiveFVGScanner(Scanner):
 
             if context.current_bid is None or context.current_ask is None:
                 continue
+
+            if ob.status == OrderBlockStatus.INVALID:
+                continue
+
+            if ob.bullish:
+                current_price = context.current_bid
+
+                if current_price < ob.expanded_low:
+                    ob.status = OrderBlockStatus.INVALID
+                    continue
+            else:
+                current_price = context.current_ask
+
+                if current_price > ob.expanded_high:
+                    ob.status = OrderBlockStatus.INVALID
+                    continue
+
             ob_index = context.df.index[
                 context.df["time"] == ob.time
             ]
@@ -40,6 +58,7 @@ class OrderBlockActiveFVGScanner(Scanner):
 
             if distance < Config.OB_MIN_CANDLE_DISTANCE:
                 continue
+
             if (
                 ob.attempt1_status != Attempt1Status.NOT_USED
                 and ob.attempt2_status != Attempt2Status.AVAILABLE
@@ -47,7 +66,6 @@ class OrderBlockActiveFVGScanner(Scanner):
                 continue
 
             signals.append(
-
                 Signal(
                     symbol=context.symbol,
                     timeframe=context.timeframe,
@@ -64,7 +82,6 @@ class OrderBlockActiveFVGScanner(Scanner):
                     orderblock=ob,
                     fvg=ob.related_fvg,
                 )
-
             )
 
         return signals
