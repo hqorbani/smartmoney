@@ -17,10 +17,20 @@ class TakeProfitAnalyzer(Analyzer):
         if stop_loss_plan is None:
             return
 
-        entry_plan = stop_loss_plan.entry_plan
-
-        entry_price = float(entry_plan.entry_price)
         stop_loss = float(stop_loss_plan.stop_loss)
+
+        if context.signal.direction == SignalDirection.BUY:
+            if context.current_ask is None:
+                return
+            entry_price = float(context.current_ask)
+
+        elif context.signal.direction == SignalDirection.SELL:
+            if context.current_bid is None:
+                return
+            entry_price = float(context.current_bid)
+
+        else:
+            return
 
         risk = abs(entry_price - stop_loss)
 
