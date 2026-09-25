@@ -28,7 +28,7 @@ class Signal:
     score: float = 0.0
     distance: float = 0.0
     current_price: float | None = None
-
+    status: str = "WAIT_ZONE"
     reason: str | None = None
 
     orderblock: OrderBlock | None = None
