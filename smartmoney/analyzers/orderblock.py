@@ -43,7 +43,7 @@ class OrderBlockAnalyzer(Analyzer):
                             # اگر این Bullish OB قبلاً ساخته شده،
                             # همان OB را حفظ می‌کنیم.
                             if any(
-                                ob.index == i and ob.bullish is True
+                                ob.time == times.iloc[i] and ob.bullish is True
                                 for ob in context.orderblocks
                             ):
                                 break
@@ -91,7 +91,7 @@ class OrderBlockAnalyzer(Analyzer):
                             # اگر این Bearish OB قبلاً ساخته شده،
                             # همان OB را حفظ می‌کنیم.
                             if any(
-                                ob.index == i and ob.bullish is False
+                                ob.time == times.iloc[i] and ob.bullish is False
                                 for ob in context.orderblocks
                             ):
                                 break
