@@ -148,13 +148,6 @@ class Scheduler:
                     context,
                 )
 
-                # print()
-                # print("Structure Events")
-
-                # for event in events:
-
-                #     print(event.type.name)
-
                 self.market_structure_engine.update(
                     context,
                     events,
@@ -244,10 +237,6 @@ class Scheduler:
                         signal,
                         current_price,
                     )
-                    # print(
-                    #     f"DISTANCE {signal.symbol} {signal.timeframe} "
-                    #     f"{signal.direction} = {signal.distance}"
-                    # )
                 all_signals.extend(signals)
 
         # -----------------------------------------
@@ -331,11 +320,20 @@ class Scheduler:
                     if zone.name == "MIDDLE"
                 )
 
+                zone_entry_price = (
+                    context.current_ask
+                    if signal.direction == SignalDirection.BUY
+                    else context.current_bid
+                )
+
+                if zone_entry_price is None:
+                    continue
+
                 if orderblock.attempt1_status == Attempt1Status.NOT_USED:
                     if self.zone_entry_service.is_first_entry(
                         orderblock,
                         "INITIAL",
-                        current_price,
+                        zone_entry_price,
                         initial_zone.price_low,
                         initial_zone.price_high,
                     ):
@@ -348,7 +346,7 @@ class Scheduler:
                     if self.zone_entry_service.is_first_entry(
                         orderblock,
                         "MIDDLE",
-                        current_price,
+                        zone_entry_price,
                         middle_zone.price_low,
                         middle_zone.price_high,
                     ):
@@ -393,6 +391,7 @@ class Scheduler:
                     result.status.value,
                     result.broker_result,
                 )
+
                 if attempt_zone == "INITIAL":
                     if result.status == ExecutionStatus.EXECUTED:
                         orderblock.attempt1_status = Attempt1Status.SUCCESS
