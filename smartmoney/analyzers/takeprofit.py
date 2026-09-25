@@ -42,17 +42,36 @@ class TakeProfitAnalyzer(Analyzer):
         if rr_ratio <= 0:
             return
 
-        if context.signal.direction == SignalDirection.BUY:
+        entry_plan = stop_loss_plan.entry_plan
 
+        if entry_plan is None:
+            return
+
+        if context.signal.direction not in (
+            SignalDirection.BUY,
+            SignalDirection.SELL,
+        ):
+            return
+
+        entry_price = float(entry_plan.entry_price)
+        risk = abs(entry_price - stop_loss)
+
+        if risk <= 0:
+            return
+
+        rr_ratio = float(Config.RR_RATIO)
+
+        if rr_ratio <= 0:
+            return
+
+        if context.signal.direction == SignalDirection.BUY:
             take_profit = entry_price + (risk * rr_ratio)
 
         elif context.signal.direction == SignalDirection.SELL:
-
             take_profit = entry_price - (risk * rr_ratio)
 
         else:
             return
-
         context.take_profit_plan = TakeProfitPlan(
             take_profit=take_profit,
             stop_loss_plan=stop_loss_plan,
