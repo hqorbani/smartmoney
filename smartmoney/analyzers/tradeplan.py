@@ -34,10 +34,22 @@ class TradePlanAnalyzer(Analyzer):
         ):
             return
 
-        entry_price = float(entry_plan.entry_price)
         stop_loss = float(stop_loss_plan.stop_loss)
         take_profit = float(take_profit_plan.take_profit)
 
+        if direction == SignalDirection.BUY:
+            if context.current_ask is None:
+                return
+            entry_price = float(context.current_ask)
+
+        elif direction == SignalDirection.SELL:
+            if context.current_bid is None:
+                return
+            entry_price = float(context.current_bid)
+
+        else:
+            return
+        
         risk = abs(entry_price - stop_loss)
         reward = abs(take_profit - entry_price)
         
