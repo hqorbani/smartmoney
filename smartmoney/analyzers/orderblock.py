@@ -2,9 +2,9 @@ import pandas as pd
 
 from smartmoney.analyzers.base import Analyzer
 from smartmoney.config import Config
+from smartmoney.models.fvg import FVGStatus
 from smartmoney.models.orderblock import OrderBlock
 from smartmoney.services.atr_service import ATRService
-
 
 class OrderBlockAnalyzer(Analyzer):
     priority = 30
@@ -27,7 +27,8 @@ class OrderBlockAnalyzer(Analyzer):
         used_indexes = set()
 
         for fvg in context.fvgs:
-
+            if fvg.status == FVGStatus.FILLED:
+                continue
             # کندل وسط FVG (Impulse Candle)
             impulse_index = fvg.start_index + 1
 

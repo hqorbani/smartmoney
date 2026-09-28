@@ -17,7 +17,21 @@ class FVGAnalyzer(Analyzer):
 
         if len(df) < 3:
             return
+        # Re-align persistent FVG indexes to the current rolling DataFrame.
+        time_to_index = {
+            time: index
+            for index, time in times.items()
+        }
 
+        for fvg in context.fvgs:
+            start_index = time_to_index.get(fvg.start_time)
+            end_index = time_to_index.get(fvg.end_time)
+
+            if start_index is None or end_index is None:
+                continue
+
+            fvg.start_index = start_index
+            fvg.end_index = end_index
         # ---------------------------------------------------------
         # FVG Detection
         # ---------------------------------------------------------
