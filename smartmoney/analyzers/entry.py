@@ -39,26 +39,6 @@ class EntryAnalyzer(Analyzer):
 
             initial_zone = EntryZone(
                 name="INITIAL",
-                price_low=ob_low,
-                price_high=ob_low + zone_size,
-            )
-
-            middle_zone = EntryZone(
-                name="MIDDLE",
-                price_low=ob_low + zone_size,
-                price_high=ob_low + (zone_size * 2),
-            )
-
-            final_zone = EntryZone(
-                name="FINAL",
-                price_low=ob_low + (zone_size * 2),
-                price_high=ob_high,
-            )
-
-        else:
-
-            initial_zone = EntryZone(
-                name="INITIAL",
                 price_low=ob_high - zone_size,
                 price_high=ob_high,
             )
@@ -73,6 +53,26 @@ class EntryAnalyzer(Analyzer):
                 name="FINAL",
                 price_low=ob_low,
                 price_high=ob_high - (zone_size * 2),
+            )
+
+        else:
+
+            initial_zone = EntryZone(
+                name="INITIAL",
+                price_low=ob_low,
+                price_high=ob_low + zone_size,
+            )
+
+            middle_zone = EntryZone(
+                name="MIDDLE",
+                price_low=ob_low + zone_size,
+                price_high=ob_low + (zone_size * 2),
+            )
+
+            final_zone = EntryZone(
+                name="FINAL",
+                price_low=ob_low + (zone_size * 2),
+                price_high=ob_high,
             )
 
         if signal.direction == SignalDirection.BUY:
