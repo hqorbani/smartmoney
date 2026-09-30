@@ -19,19 +19,20 @@ class ZoneEntryService:
         else:
             raise ValueError(f"Unsupported zone: {zone_name}")
 
-        if not inside:
-            if zone_name == "INITIAL":
-                orderblock.initial_zone_inside = False
-            else:
-                orderblock.middle_zone_inside = False
-            return False
+        if inside:
+            if was_inside:
+                return False
 
-        if was_inside:
-            return False
+            if zone_name == "INITIAL":
+                orderblock.initial_zone_inside = True
+            else:
+                orderblock.middle_zone_inside = True
+
+            return True
 
         if zone_name == "INITIAL":
-            orderblock.initial_zone_inside = True
+            orderblock.initial_zone_inside = False
         else:
-            orderblock.middle_zone_inside = True
+            orderblock.middle_zone_inside = False
 
-        return True
+        return False

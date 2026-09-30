@@ -54,7 +54,9 @@ class SignalScanner:
                     timeframe=timeframe,
                     df=df,
                 )
-
+                tick = self.provider.get_current_tick(symbol)
+                context.current_bid = tick.bid
+                context.current_ask = tick.ask
                 self.analyzer_engine.run(context)
 
                 events = self.structure_event_engine.run(context)
