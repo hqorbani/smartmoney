@@ -121,41 +121,12 @@ class MarketStructureEngine:
                 events,
             )
 
-        #
-        # Debug
-        #
-
-        print()
-        # print(context.symbol, context.timeframe)
-
-        # print("Bias:", structure.bias.name)
-
-        # print("Protected High :", structure.protected_high.price)
-        # print("Protected Low  :", structure.protected_low.price)
-
-        # print("Structural High:", structure.structural_high.price)
-        # print("Structural Low :", structure.structural_low.price)
-
-        # print(
-        #     "Protected Low Index :",
-        #     structure.protected_low.swing_index,
-        # )
-
-        # print(
-        #     "Structural High Index :",
-        #     structure.structural_high.swing_index,
-        # )
-    # ==================================================
-    # UNKNOWN
-    # ==================================================
-
     def _handle_unknown(
         self,
         context: MarketContext,
         events: list[StructureEvent],
     ) -> None:
 
-        # print("ENTER _handle_unknown")
         structure = context.market_structure
 
         for event in events:
@@ -189,21 +160,13 @@ class MarketStructureEngine:
         events: list[StructureEvent],
     ) -> None:
 
-        # print("ENTER _handle_bullish")
-
         structure = context.market_structure
 
         for event in events:
 
             if event.type == StructureEventType.BEARISH_WEAKNESS:
-
-                # print("BEARISH WEAKNESS DETECTED")
-
                 structure.bias = MarketBias.TRANSITION
-
                 return
-
-        # print("CALLING BOS DETECTOR")
 
         self._detect_bullish_bos(context)
     # ==================================================
@@ -297,8 +260,6 @@ class MarketStructureEngine:
 
                 return
 
-    # --------------------------------------------------
-
     def _find_initial_protected_high(
         self,
         context: MarketContext,
@@ -368,9 +329,7 @@ class MarketStructureEngine:
             )
 
             if pattern == self._INITIAL_BEARISH_PATTERN:
-
                 swing = relations[i + 2].current
-
                 structure.structural_low.price = swing.price
                 structure.structural_low.swing_index = swing.index
 
@@ -380,17 +339,12 @@ class MarketStructureEngine:
         self,
         context: MarketContext,
     ) -> None:
-        # print("ENTER _detect_bullish_bos")
         structure = context.market_structure
-
         level = structure.structural_high
-
         if level.price is None:
             return
-
         if level.swing_index is None:
             return
-
         swing = self._get_swing_by_index(
             context,
             level.swing_index,
@@ -408,23 +362,12 @@ class MarketStructureEngine:
             return
 
         current_close = context.df.iloc[-1]["close"]
-        # print(
-        #     "BOS CHECK*-----------***********************---------",
-        #     "close =", current_close,
-        #     "level =", level.price,
-        # )
         if current_close <= level.price:
             return
 
         swing.is_broken = True
 
         structure.bos_count += 1
-
-        # print(
-        #     "Bullish BOS",
-        #     structure.bos_count,
-        # )       
-
 
     def _is_bullish_displacement(
         self,
