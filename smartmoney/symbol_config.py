@@ -1,33 +1,38 @@
 SYMBOL_CONFIG = {
-    "EURUSD": {
-        "min_fvg_size": 0.00001,
+
+    "NAS100": {
+        "min_fvg_size": 10,
         "pip_value": 1,
         "pip_size": 1,
     },
-    "GBPUSD": {
-        "min_fvg_size": 0.00001,
+    "US500": {
+        "min_fvg_size": 2,
         "pip_value": 1,
-        "pip_size": 0.01,
+        "pip_size": 1,
     },
     "USDJPY": {
-        "min_fvg_size": 0.001,
-        "pip_value": 1,
-        "pip_size": 1,
-    },
-    "NAS100": {
-        "min_fvg_size": 1,
-        "pip_value": 1,
-        "pip_size": 1,
-    },
-    "XAUUSD": {
-        "min_fvg_size": 0.5,
-        "pip_value": 1,
+        "min_fvg_size": 0.04,
+        "pip_value": 6.4,
         "pip_size": 0.01,
     },
-    "BITCOIN": {
-        "min_fvg_size": 0.5,
-        "pip_value": 1,
-        "pip_size": 1,
+    "XAUUSD": {
+        "min_fvg_size": 1.5,
+        "pip_value": 10,
+        "pip_size": 0.1,
     },
-
+    "EURUSD": {
+        "min_fvg_size": 0.0002,
+        "pip_value": 1,
+        "pip_size": 0.00001,
+    },
+    "GBPUSD": {
+        "min_fvg_size": 0.0002,
+        "pip_value": 1,
+        "pip_size": 0.00001,
+    },
+    "AUDUSD": {
+        "min_fvg_size": 0.0002,
+        "pip_value": 1,
+        "pip_size": 0.00001,
+    }
 }

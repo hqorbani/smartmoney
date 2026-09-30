@@ -10,18 +10,20 @@ class Config:
     # ----------------------------
     RISK_PERCENT = 1.0
     
-    HISTORY_BARS = 600
+    HISTORY_BARS = 700
 
-    SCAN_INTERVAL = 3
+    SCAN_INTERVAL = 1
 
     SYMBOLS = list(SYMBOL_CONFIG.keys())
     #----------
 
     TIMEFRAMES = [
         mt5.TIMEFRAME_M1,
+        mt5.TIMEFRAME_M2,
         mt5.TIMEFRAME_M3,
+        mt5.TIMEFRAME_M4,
         mt5.TIMEFRAME_M5,
-        # mt5.TIMEFRAME_M15,
+        mt5.TIMEFRAME_M6,
         # mt5.TIMEFRAME_H1
     ]
 
@@ -41,7 +43,7 @@ class Config:
 
     SORT_DESCENDING = False
 
-    TOP_SIGNALS = 20
+    TOP_SIGNALS = 10
 
     MINIMUM_SCORE = 0.0
 
@@ -50,7 +52,7 @@ class Config:
     RR_RATIO = 2.0
     ATR_PERIOD = 11
     OB_EXPANSION_FACTOR = 0.25
-    OB_MIN_CANDLE_DISTANCE = 5
+    OB_MIN_CANDLE_DISTANCE = 10
     # ----------------------------
     # Debug
     # ----------------------------
