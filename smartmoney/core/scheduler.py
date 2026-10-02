@@ -157,7 +157,6 @@ class Scheduler:
                 # ----------------------------
 
                 signals = self.scanner_engine.run(context)
-
                 for signal in signals:
 
                     if (
@@ -314,6 +313,8 @@ class Scheduler:
         )
         if self.executor is not None:
             executed_this_cycle = False
+            execution_entries = 0
+            execution_skipped = 0
             for signal in queried_signals:
                 trade_plan = getattr(signal, "trade_plan", None)
                 position_size_plan = getattr(signal, "position_size_plan", None)
@@ -379,9 +380,8 @@ class Scheduler:
                     else tick.bid
                 )
 
-                self.logger.info(
-                    "EXECUTION TICK | signal_symbol=%s | "
-                    "direction=%s | bid=%s | ask=%s | zone_entry_price=%s",
+                self.logger.debug(
+                    "TICK | %s %s | bid=%s | ask=%s | entry=%s",
                     signal.symbol,
                     signal_direction,
                     tick.bid,
@@ -392,13 +392,11 @@ class Scheduler:
                 if zone_entry_price is None:
                     continue
 
-                self.logger.info(
-                    "ZONE ENTRY CHECK | symbol=%s | direction=%s | "
-                    "price=%s | INITIAL=[%s,%s] | MIDDLE=[%s,%s] | "
-                    "attempt1_status=%s | attempt2_status=%s",
+                self.logger.debug(
+                    "ZONE | %s %s | initial=[%s,%s] | middle=[%s,%s] | "
+                    "attempt1=%s | attempt2=%s",
                     signal.symbol,
-                    signal.direction,
-                    zone_entry_price,
+                    signal_direction,
                     initial_zone.price_low,
                     initial_zone.price_high,
                     middle_zone.price_low,
@@ -416,14 +414,6 @@ class Scheduler:
                         initial_zone.price_high,
                     ):
                         attempt_zone = "INITIAL"
-                    self.logger.info(
-                        "INITIAL ZONE RESULT | symbol=%s | direction=%s | "
-                        "attempt_zone=%s | initial_zone_inside=%s",
-                        signal.symbol,
-                        signal.direction,
-                        attempt_zone,
-                        orderblock.initial_zone_inside,
-                    )
 
                 elif (
                     orderblock.attempt1_status == Attempt1Status.FAILED
@@ -437,29 +427,9 @@ class Scheduler:
                         middle_zone.price_high,
                     ):
                         attempt_zone = "MIDDLE"
-                    self.logger.info(
-                        "MIDDLE ZONE RESULT | symbol=%s | direction=%s | "
-                        "attempt_zone=%s | middle_zone_inside=%s",
-                        signal.symbol,
-                        signal.direction,
-                        attempt_zone,
-                        orderblock.middle_zone_inside,
-                    )
 
                 if attempt_zone is None:
-                    self.logger.warning(
-                        "EXECUTION SKIPPED | symbol=%s | direction=%s | "
-                        "reason=NO_FIRST_ENTRY | price=%s | "
-                        "attempt1_status=%s | attempt2_status=%s | "
-                        "initial_inside=%s | middle_inside=%s",
-                        signal.symbol,
-                        signal.direction,
-                        zone_entry_price,
-                        orderblock.attempt1_status,
-                        orderblock.attempt2_status,
-                        orderblock.initial_zone_inside,
-                        orderblock.middle_zone_inside,
-                    )
+                    execution_skipped += 1
                     continue
 
                 if self._has_active_position(trade_plan.symbol):
@@ -516,5 +486,12 @@ class Scheduler:
                     orderblock.status = OrderBlockStatus.CONSUMED
 
                 if result.status == ExecutionStatus.EXECUTED:
+                    execution_entries += 1
                     self._executed_trade_keys.add(trade_key)
                     executed_this_cycle = True
+            self.logger.info(
+                "EXECUTION | candidates=%s | entries=%s | skipped=%s",
+                len(queried_signals),
+                execution_entries,
+                execution_skipped,
+            )
