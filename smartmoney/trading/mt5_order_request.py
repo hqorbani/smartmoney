@@ -1,3 +1,4 @@
+import math
 from smartmoney.trading.trade_plan import (
     TradeDirection,
     TradePlan,
@@ -20,9 +21,9 @@ def build_mt5_order_request(
         raise ValueError(
             "Trade plan risk must be positive"
         )    
-    if volume <= 0:
+    if not math.isfinite(volume) or volume <= 0:
         raise ValueError(
-            "Volume must be positive"
+            "Volume must be positive and finite"
         )
 
     if not isinstance(plan.direction, TradeDirection):
@@ -77,9 +78,9 @@ def build_real_mt5_order_request(
             "Trade plan risk must be positive"
         )
 
-    if volume <= 0:
+    if not math.isfinite(volume) or volume <= 0:
         raise ValueError(
-            "Volume must be positive"
+            "Volume must be positive and finite"
         )
 
     if price <= 0:

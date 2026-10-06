@@ -2,6 +2,7 @@ import pytest
 import MetaTrader5 as mt5
 from smartmoney.trading.mt5_order_request import (
     build_mt5_order_request,
+    build_real_mt5_order_request,
 )
 from smartmoney.trading.trade_plan import (
     TradeDirection,
@@ -356,4 +357,47 @@ def test_build_mt5_close_request_for_buy_position():
     assert request["position"] == 379625952
     assert request["price"] == 2641.45
     assert request["type_time"] == mt5.ORDER_TIME_GTC
-    assert request["type_filling"] == 0    
+    assert request["type_filling"] == 0
+
+def test_build_mt5_order_request_rejects_non_finite_volume():
+    plan = TradePlan(
+        symbol="EURUSD",
+        timeframe=15,
+        direction=TradeDirection.BUY,
+        entry_price=1.1000,
+        stop_loss=1.0950,
+        take_profit=1.1100,
+        risk_distance=0.0050,
+        orderblock_index=10,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Volume must be positive and finite",
+    ):
+        build_mt5_order_request(
+            plan=plan,
+            volume=float("nan"),
+        )
+
+def test_build_real_mt5_order_request_rejects_non_finite_volume():
+    plan = TradePlan(
+        symbol="EURUSD",
+        timeframe=15,
+        direction=TradeDirection.BUY,
+        entry_price=1.1000,
+        stop_loss=1.0950,
+        take_profit=1.1100,
+        risk_distance=0.0050,
+        orderblock_index=10,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Volume must be positive and finite",
+    ):
+        build_real_mt5_order_request(
+            plan=plan,
+            volume=float("nan"),
+            price=1.1002,
+        )          
