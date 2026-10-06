@@ -139,8 +139,8 @@ def build_mt5_close_request(
     comment: str = "smartmoney close",
     type_filling: int = 0,
 ) -> dict:
-    if volume <= 0:
-        raise ValueError("Volume must be positive")
+    if not math.isfinite(volume) or volume <= 0:
+        raise ValueError("Volume must be positive and finite")
 
     if position_ticket <= 0:
         raise ValueError("Position ticket must be positive")

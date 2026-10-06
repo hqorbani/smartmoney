@@ -3,6 +3,7 @@ import MetaTrader5 as mt5
 from smartmoney.trading.mt5_order_request import (
     build_mt5_order_request,
     build_real_mt5_order_request,
+    build_mt5_close_request,
 )
 from smartmoney.trading.trade_plan import (
     TradeDirection,
@@ -400,4 +401,17 @@ def test_build_real_mt5_order_request_rejects_non_finite_volume():
             plan=plan,
             volume=float("nan"),
             price=1.1002,
-        )          
+        )
+
+def test_build_mt5_close_request_rejects_non_finite_volume():
+    with pytest.raises(
+        ValueError,
+        match="Volume must be positive and finite",
+    ):
+        build_mt5_close_request(
+            symbol="EURUSD",
+            volume=float("nan"),
+            position_ticket=123,
+            position_type=mt5.POSITION_TYPE_BUY,
+            price=1.15420,
+        )      
