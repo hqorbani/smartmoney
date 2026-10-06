@@ -1,7 +1,6 @@
 import math
 from smartmoney.analyzers.base import Analyzer
 from smartmoney.models.position_size import PositionSizePlan
-from smartmoney.models.symbol_trading_info import SymbolTradingInfo
 
 
 class PositionSizeAnalyzer(Analyzer):
