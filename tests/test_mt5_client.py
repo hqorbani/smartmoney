@@ -396,4 +396,58 @@ def test_mt5_client_order_check_delegates_to_mt5(monkeypatch):
 
     assert captured["request"] == request
     assert result["retcode"] == 0
-    assert result["comment"] == "Done"                                      
+    assert result["comment"] == "Done"
+
+def test_mt5_client_returns_symbol_trading_info(monkeypatch):
+    from smartmoney.trading.mt5_client import MT5Client
+    from smartmoney.models.symbol_trading_info import SymbolTradingInfo
+
+    class FakeInfo:
+        trade_tick_size = 0.00001
+        trade_tick_value = 1.0
+        trade_contract_size = 100_000.0
+        digits = 5
+        volume_min = 0.01
+        volume_max = 100.0
+        volume_step = 0.01
+
+    def fake_symbol_info(symbol):
+        assert symbol == "EURUSD"
+        return FakeInfo()
+
+    monkeypatch.setattr(
+        mt5,
+        "symbol_info",
+        fake_symbol_info,
+    )
+
+    client = MT5Client()
+
+    info = client.get_symbol_trading_info("EURUSD")
+
+    assert info == SymbolTradingInfo(
+        tick_size=0.00001,
+        tick_value=1.0,
+        contract_size=100_000.0,
+        digits=5,
+        volume_min=0.01,
+        volume_max=100.0,
+        volume_step=0.01,
+    )
+
+def test_mt5_client_raises_when_symbol_info_is_missing(monkeypatch):
+    from smartmoney.trading.mt5_client import MT5Client
+
+    monkeypatch.setattr(
+        mt5,
+        "symbol_info",
+        lambda symbol: None,
+    )
+
+    client = MT5Client()
+
+    with pytest.raises(
+        ValueError,
+        match="Symbol not found: EURUSD",
+    ):
+        client.get_symbol_trading_info("EURUSD")
