@@ -167,8 +167,7 @@ def create_live_scheduler() -> Scheduler:
     position_size_analyzer = PositionSizeAnalyzer(
         balance=provider.get_account_balance(),
         risk_percent=Config.RISK_PERCENT,
-        pip_size=1.0,
-        pip_value=1.0,
+        symbol_trading_info_provider=provider.get_symbol_trading_info,
     )
     executor = MT5BrokerExecutor(
         mt5_client=MT5Client(),
