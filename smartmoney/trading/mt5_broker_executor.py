@@ -8,7 +8,6 @@ from smartmoney.trading.mt5_order_request import (
     build_mt5_order_request,
     build_real_mt5_order_request,
 )
-from smartmoney.trading.mt5_volume import calculate_mt5_volume
 from smartmoney.trading.mt5_order_request import build_mt5_close_request
 
 class MT5BrokerExecutor(BrokerExecutor):
