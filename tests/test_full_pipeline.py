@@ -18,7 +18,7 @@ def make_context(rows):
     df["time"] = pd.to_datetime(df["time"])
 
     return MarketContext(
-        symbol="TEST",
+        symbol="EURUSD",
         timeframe=15,
         df=df,
     )
@@ -38,6 +38,8 @@ def make_engine():
         PositionSizeAnalyzer(
             balance=10_000,
             risk_percent=1.0,
+            pip_size=1.0,
+            pip_value=1.0,
         )
     )
 
@@ -261,6 +263,8 @@ def test_full_engine_keeps_signal_after_each_pipeline_stage():
         PositionSizeAnalyzer(
             balance=10_000,
             risk_percent=1.0,
+            pip_size=1.0,
+            pip_value=1.0,
         ),
     ]
 

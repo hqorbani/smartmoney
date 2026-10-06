@@ -1,6 +1,5 @@
 from smartmoney.analyzers.base import Analyzer
 from smartmoney.models.position_size import PositionSizePlan
-from smartmoney.symbol_config import SYMBOL_CONFIG
 
 
 class PositionSizeAnalyzer(Analyzer):
@@ -11,9 +10,13 @@ class PositionSizeAnalyzer(Analyzer):
         self,
         balance: float,
         risk_percent: float,
+        pip_size: float,
+        pip_value: float,
     ):
         self.balance = float(balance)
         self.risk_percent = float(risk_percent)
+        self.pip_size = float(pip_size)
+        self.pip_value = float(pip_value)
 
     def analyze(self, context):
 
@@ -29,10 +32,8 @@ class PositionSizeAnalyzer(Analyzer):
         if self.risk_percent <= 0 or self.risk_percent > 100:
             return
 
-        symbol_config = SYMBOL_CONFIG[trade_plan.symbol]
-
-        pip_size = float(symbol_config["pip_size"])
-        pip_value = float(symbol_config["pip_value"])
+        pip_size = self.pip_size
+        pip_value = self.pip_value
 
         if pip_size <= 0 or pip_value <= 0:
             return
