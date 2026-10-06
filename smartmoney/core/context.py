@@ -12,7 +12,7 @@ from smartmoney.models.signal import Signal
 from smartmoney.models.entry import EntryPlan
 from smartmoney.models.stoploss import StopLossPlan
 from smartmoney.models.takeprofit import TakeProfitPlan
-from smartmoney.models.tradeplan import TradePlan
+from smartmoney.trading.trade_plan import TradePlan
 from smartmoney.models.position_size import PositionSizePlan
 
 @dataclass
