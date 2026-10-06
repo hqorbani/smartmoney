@@ -73,6 +73,23 @@ class PositionSizeAnalyzer(Analyzer):
             risk_amount
             / risk_per_lot
         )
+        volume_min = symbol_trading_info.volume_min
+        volume_max = symbol_trading_info.volume_max
+        volume_step = symbol_trading_info.volume_step
+
+        if volume_min <= 0 or volume_max <= 0 or volume_step <= 0:
+            return
+
+        if position_size < volume_min:
+            position_size = volume_min
+        else:
+            position_size = (
+                int(position_size / volume_step)
+                * volume_step
+            )
+
+        if position_size > volume_max:
+            position_size = volume_max
 
         context.position_size_plan = PositionSizePlan(
             balance=self.balance,

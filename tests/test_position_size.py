@@ -121,6 +121,42 @@ def test_position_size_changes_with_risk_percent():
     assert plan.stop_distance == 5
     assert plan.position_size == 80
 
+def test_position_size_respects_volume_step():
+    context = make_context(
+        direction=SignalDirection.BUY,
+        entry_price=100,
+        stop_loss=98,
+        take_profit=104,
+    )
+
+    make_analyzer(
+        balance=10_000,
+        risk_percent=1.0,
+        tick_size=1.0,
+        tick_value=3.0,
+    ).analyze(context)
+
+    assert context.position_size_plan is not None
+    assert context.position_size_plan.position_size == 16.66
+
+
+def test_position_size_respects_volume_minimum():
+    context = make_context(
+        direction=SignalDirection.BUY,
+        entry_price=100,
+        stop_loss=98,
+        take_profit=104,
+    )
+
+    make_analyzer(
+        balance=10,
+        risk_percent=1.0,
+        tick_size=1.0,
+        tick_value=10.0,
+    ).analyze(context)
+
+    assert context.position_size_plan is not None
+    assert context.position_size_plan.position_size == 0.01
 
 def test_no_position_size_without_tradeplan():
     context = MarketContext(
@@ -234,3 +270,21 @@ def test_position_size_model_stores_calculated_values():
     assert plan.risk_amount == 100
     assert plan.stop_distance == 2
     assert plan.position_size == 50
+    
+def test_position_size_respects_volume_maximum():
+    context = make_context(
+        direction=SignalDirection.BUY,
+        entry_price=100,
+        stop_loss=99,
+        take_profit=102,
+    )
+
+    make_analyzer(
+        balance=100_000,
+        risk_percent=10.0,
+        tick_size=1.0,
+        tick_value=1.0,
+    ).analyze(context)
+
+    assert context.position_size_plan is not None
+    assert context.position_size_plan.position_size == 100.0
