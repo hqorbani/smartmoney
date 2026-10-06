@@ -165,7 +165,7 @@ def test_mt5_broker_executor_rejects_non_positive_volume():
     result = executor.execute(plan)
 
     assert result.status == ExecutionStatus.REJECTED
-    assert result.message == "Volume must be positive"
+    assert result.message == "Volume must be positive and finite"
 
 def test_mt5_broker_executor_uses_configured_volume():
     plan = TradePlan(
