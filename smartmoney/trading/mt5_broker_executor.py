@@ -136,12 +136,7 @@ class MT5BrokerExecutor(BrokerExecutor):
                 volume = self.volume
 
                 if self.position_size_plan is not None:
-                    symbol_info = self.mt5_client.symbol_info(plan.symbol)
-                    volume = (
-                        self.position_size_plan.position_size
-                        if self.position_size_plan is not None
-                        else self.volume
-                    )
+                    volume = self.position_size_plan.position_size
 
                 request = build_mt5_order_request(
                     plan=plan,
