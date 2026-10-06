@@ -1,6 +1,6 @@
 import MetaTrader5 as mt5
 import pandas as pd
-
+from smartmoney.models.symbol_trading_info import SymbolTradingInfo
 
 class MT5DataProvider:
     """Wrapper around MetaTrader5 package."""
@@ -169,3 +169,22 @@ class MT5DataProvider:
         tick = self.get_current_tick(symbol)
 
         return (tick.bid + tick.ask) / 2
+
+    def get_symbol_trading_info(
+        self,
+        symbol: str,
+    ) -> SymbolTradingInfo:
+        info = self.symbol_info(symbol)
+
+        if info is None:
+            raise ValueError(f"Symbol not found: {symbol}")
+
+        return SymbolTradingInfo(
+            tick_size=float(info.trade_tick_size),
+            tick_value=float(info.trade_tick_value),
+            contract_size=float(info.trade_contract_size),
+            digits=int(info.digits),
+            volume_min=float(info.volume_min),
+            volume_max=float(info.volume_max),
+            volume_step=float(info.volume_step),
+        )
