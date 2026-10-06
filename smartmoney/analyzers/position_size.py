@@ -1,3 +1,4 @@
+import math
 from smartmoney.analyzers.base import Analyzer
 from smartmoney.models.position_size import PositionSizePlan
 from smartmoney.models.symbol_trading_info import SymbolTradingInfo
@@ -39,7 +40,12 @@ class PositionSizeAnalyzer(Analyzer):
         tick_size = symbol_trading_info.tick_size
         tick_value = symbol_trading_info.tick_value
 
-        if tick_size <= 0 or tick_value <= 0:
+        if (
+            not math.isfinite(tick_size)
+            or not math.isfinite(tick_value)
+            or tick_size <= 0
+            or tick_value <= 0
+        ):
             return
 
         stop_distance = abs(
@@ -73,6 +79,9 @@ class PositionSizeAnalyzer(Analyzer):
             risk_amount
             / risk_per_lot
         )
+
+        if not math.isfinite(position_size):
+            return
         volume_min = symbol_trading_info.volume_min
         volume_max = symbol_trading_info.volume_max
         volume_step = symbol_trading_info.volume_step

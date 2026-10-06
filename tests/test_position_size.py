@@ -288,3 +288,20 @@ def test_position_size_respects_volume_maximum():
 
     assert context.position_size_plan is not None
     assert context.position_size_plan.position_size == 100.0
+
+def test_position_size_rejects_non_finite_trading_info():
+    context = make_context(
+        direction=SignalDirection.BUY,
+        entry_price=100,
+        stop_loss=98,
+        take_profit=104,
+    )
+
+    make_analyzer(
+        balance=10_000,
+        risk_percent=1.0,
+        tick_size=float("nan"),
+        tick_value=3.0,
+    ).analyze(context)
+
+    assert context.position_size_plan is None
