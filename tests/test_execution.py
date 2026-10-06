@@ -692,4 +692,36 @@ def test_execution_result_without_position_size_cannot_create_trade_position():
         ValueError,
         match="Position size plan is required to create a position",
     ):
-        result.to_position()        
+        result.to_position()
+
+def test_executed_result_can_create_position():
+    trade_plan = TradePlan(
+        symbol="EURUSD",
+        timeframe=15,
+        direction=TradeDirection.BUY,
+        entry_price=1.15420,
+        stop_loss=1.15320,
+        take_profit=1.15620,
+        risk_distance=0.00100,
+        orderblock_index=7,
+    )
+
+    position_size_plan = PositionSizePlan(
+        balance=10_000.0,
+        risk_percent=1.0,
+        risk_amount=100.0,
+        stop_distance=0.00100,
+        position_size=0.10,
+    )
+
+    result = ExecutionResult(
+        status=ExecutionStatus.EXECUTED,
+        plan=trade_plan,
+        message="MT5 order executed",
+        position_size_plan=position_size_plan,
+    )
+
+    position = result.to_position()
+
+    assert position.plan == trade_plan
+    assert position.size == 0.10

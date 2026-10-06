@@ -21,7 +21,10 @@ class ExecutionResult:
     broker_result: object | None = None
 
     def to_position(self) -> TradePosition:
-        if self.status != ExecutionStatus.DRY_RUN:
+        if self.status not in (
+            ExecutionStatus.DRY_RUN,
+            ExecutionStatus.EXECUTED,
+        ):
             raise ValueError(
                 "Only successful execution results can create a position"
             )
