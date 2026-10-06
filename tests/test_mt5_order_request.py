@@ -337,7 +337,7 @@ def test_build_real_mt5_order_request_uses_configured_filling_mode():
     )
 
     assert request["type_filling"] == 1
-
+    assert request["price"] == 1.15420
 def test_build_mt5_close_request_for_buy_position():
     from smartmoney.trading.mt5_order_request import build_mt5_close_request
 
