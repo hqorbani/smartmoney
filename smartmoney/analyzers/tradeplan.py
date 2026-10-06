@@ -59,5 +59,5 @@ class TradePlanAnalyzer(Analyzer):
             stop_loss=stop_loss,
             take_profit=take_profit,
             risk_distance=risk,
-            orderblock_index=0,
+            orderblock_index=entry_plan.orderblock.index,
         )
