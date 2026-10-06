@@ -1,10 +1,9 @@
-from types import SimpleNamespace
-
 from smartmoney.analyzers.position_size import PositionSizeAnalyzer
 from smartmoney.core.context import MarketContext
-from smartmoney.models.signal import SignalDirection
 from smartmoney.models.position_size import PositionSizePlan
-
+from smartmoney.models.signal import SignalDirection
+from smartmoney.models.symbol_trading_info import SymbolTradingInfo
+from types import SimpleNamespace
 
 def make_context(
     direction,
@@ -33,14 +32,21 @@ def make_context(
 def make_analyzer(
     balance,
     risk_percent,
-    pip_size=1.0,
-    pip_value=1.0,
+    tick_size=1.0,
+    tick_value=1.0,
 ):
     return PositionSizeAnalyzer(
         balance=balance,
         risk_percent=risk_percent,
-        pip_size=pip_size,
-        pip_value=pip_value,
+        symbol_trading_info_provider=lambda symbol: SymbolTradingInfo(
+            tick_size=tick_size,
+            tick_value=tick_value,
+            contract_size=1.0,
+            digits=2,
+            volume_min=0.01,
+            volume_max=100.0,
+            volume_step=0.01,
+        ),
     )
 
 

@@ -1,5 +1,6 @@
 from smartmoney.analyzers.base import Analyzer
 from smartmoney.models.position_size import PositionSizePlan
+from smartmoney.models.symbol_trading_info import SymbolTradingInfo
 
 
 class PositionSizeAnalyzer(Analyzer):
@@ -10,13 +11,11 @@ class PositionSizeAnalyzer(Analyzer):
         self,
         balance: float,
         risk_percent: float,
-        pip_size: float,
-        pip_value: float,
+        symbol_trading_info_provider,
     ):
         self.balance = float(balance)
         self.risk_percent = float(risk_percent)
-        self.pip_size = float(pip_size)
-        self.pip_value = float(pip_value)
+        self.symbol_trading_info_provider = symbol_trading_info_provider
 
     def analyze(self, context):
 
@@ -26,16 +25,21 @@ class PositionSizeAnalyzer(Analyzer):
 
         if trade_plan is None:
             return
+
         if self.balance <= 0:
             return
 
         if self.risk_percent <= 0 or self.risk_percent > 100:
             return
 
-        pip_size = self.pip_size
-        pip_value = self.pip_value
+        symbol_trading_info = self.symbol_trading_info_provider(
+            context.symbol
+        )
 
-        if pip_size <= 0 or pip_value <= 0:
+        tick_size = symbol_trading_info.tick_size
+        tick_value = symbol_trading_info.tick_value
+
+        if tick_size <= 0 or tick_value <= 0:
             return
 
         stop_distance = abs(
@@ -46,7 +50,7 @@ class PositionSizeAnalyzer(Analyzer):
         if stop_distance <= 0:
             return
 
-        stop_distance_pips = stop_distance / pip_size
+        stop_distance_ticks = stop_distance / tick_size
 
         risk_amount = (
             self.balance
@@ -58,8 +62,8 @@ class PositionSizeAnalyzer(Analyzer):
             return
 
         risk_per_lot = (
-            stop_distance_pips
-            * pip_value
+            stop_distance_ticks
+            * tick_value
         )
 
         if risk_per_lot <= 0:
