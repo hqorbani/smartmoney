@@ -32,6 +32,7 @@ def make_trade_context(
 
     context.entry_plan = SimpleNamespace(
         entry_price=entry_price,
+        orderblock=SimpleNamespace(index=7),
     )
 
     context.stop_loss_plan = SimpleNamespace(
@@ -65,9 +66,8 @@ def test_bullish_tradeplan_is_created():
     assert trade.entry_price == 100
     assert trade.stop_loss == 98
     assert trade.take_profit == 104
-    assert trade.risk == 2
-    assert trade.reward == 4
-    assert trade.risk_reward_ratio == 2.0
+    assert trade.risk_distance == 2
+    assert trade.orderblock_index == 7
 
 
 def test_bearish_tradeplan_is_created():
@@ -88,9 +88,8 @@ def test_bearish_tradeplan_is_created():
     assert trade.entry_price == 100
     assert trade.stop_loss == 102
     assert trade.take_profit == 96
-    assert trade.risk == 2
-    assert trade.reward == 4
-    assert trade.risk_reward_ratio == 2.0
+    assert trade.risk_distance == 2
+    assert trade.orderblock_index == 7
 
 
 def test_no_tradeplan_without_takeprofit():
