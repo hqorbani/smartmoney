@@ -124,15 +124,7 @@ class MT5BrokerExecutor(BrokerExecutor):
 
                 symbol_info = self.mt5_client.symbol_info(plan.symbol)
                 if self.position_size_plan is not None:
-                    volume = calculate_mt5_volume(
-                        risk_amount=self.position_size_plan.risk_amount,
-                        stop_distance=self.position_size_plan.stop_distance,
-                        trade_tick_value=symbol_info.trade_tick_value,
-                        trade_tick_size=symbol_info.trade_tick_size,
-                        volume_step=symbol_info.volume_step,
-                        volume_min=symbol_info.volume_min,
-                        volume_max=symbol_info.volume_max,
-                    )
+                    volume = self.position_size_plan.position_size
                 else:
                     volume = self.volume
                 request = build_real_mt5_order_request(
@@ -146,14 +138,10 @@ class MT5BrokerExecutor(BrokerExecutor):
 
                 if self.position_size_plan is not None:
                     symbol_info = self.mt5_client.symbol_info(plan.symbol)
-                    volume = calculate_mt5_volume(
-                        risk_amount=self.position_size_plan.risk_amount,
-                        stop_distance=self.position_size_plan.stop_distance,
-                        trade_tick_value=symbol_info.trade_tick_value,
-                        trade_tick_size=symbol_info.trade_tick_size,
-                        volume_step=symbol_info.volume_step,
-                        volume_min=symbol_info.volume_min,
-                        volume_max=symbol_info.volume_max,
+                    volume = (
+                        self.position_size_plan.position_size
+                        if self.position_size_plan is not None
+                        else self.volume
                     )
 
                 request = build_mt5_order_request(
