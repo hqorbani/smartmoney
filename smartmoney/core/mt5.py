@@ -1,3 +1,4 @@
+import math
 import MetaTrader5 as mt5
 import pandas as pd
 from smartmoney.models.symbol_trading_info import SymbolTradingInfo
@@ -188,3 +189,35 @@ class MT5DataProvider:
             volume_max=float(info.volume_max),
             volume_step=float(info.volume_step),
         )
+
+    def calculate_loss_per_lot(
+        self,
+        symbol: str,
+        direction,
+        entry_price: float,
+        stop_loss: float,
+    ) -> float | None:
+
+        order_type = (
+            mt5.ORDER_TYPE_BUY
+            if direction.value == "buy"
+            else mt5.ORDER_TYPE_SELL
+        )
+
+        profit = mt5.order_calc_profit(
+            order_type,
+            symbol,
+            1.0,
+            entry_price,
+            stop_loss,
+        )
+
+        if profit is None:
+            return None
+
+        loss = abs(float(profit))
+
+        if not math.isfinite(loss) or loss <= 0:
+            return None
+
+        return loss

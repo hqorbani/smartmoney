@@ -12,10 +12,12 @@ class PositionSizeAnalyzer(Analyzer):
         balance: float,
         risk_percent: float,
         symbol_trading_info_provider,
+        loss_per_lot_provider,
     ):
         self.balance = float(balance)
         self.risk_percent = float(risk_percent)
         self.symbol_trading_info_provider = symbol_trading_info_provider
+        self.loss_per_lot_provider = loss_per_lot_provider
 
     def analyze(self, context):
 
@@ -36,17 +38,6 @@ class PositionSizeAnalyzer(Analyzer):
             context.symbol
         )
 
-        tick_size = symbol_trading_info.tick_size
-        tick_value = symbol_trading_info.tick_value
-
-        if (
-            not math.isfinite(tick_size)
-            or not math.isfinite(tick_value)
-            or tick_size <= 0
-            or tick_value <= 0
-        ):
-            return
-
         stop_distance = abs(
             float(trade_plan.entry_price)
             - float(trade_plan.stop_loss)
@@ -54,8 +45,6 @@ class PositionSizeAnalyzer(Analyzer):
 
         if stop_distance <= 0:
             return
-
-        stop_distance_ticks = stop_distance / tick_size
 
         risk_amount = (
             self.balance
@@ -65,11 +54,21 @@ class PositionSizeAnalyzer(Analyzer):
 
         if risk_amount <= 0:
             return
-
-        risk_per_lot = (
-            stop_distance_ticks
-            * tick_value
+        risk_per_lot = self.loss_per_lot_provider(
+            context.symbol,
+            trade_plan.direction,
+            float(trade_plan.entry_price),
+            float(trade_plan.stop_loss),
         )
+
+        if risk_per_lot is None:
+            return
+
+        if (
+            not math.isfinite(risk_per_lot)
+            or risk_per_lot <= 0
+        ):
+            return
 
         if risk_per_lot <= 0:
             return

@@ -168,6 +168,7 @@ def create_live_scheduler() -> Scheduler:
         balance=provider.get_account_balance(),
         risk_percent=Config.RISK_PERCENT,
         symbol_trading_info_provider=provider.get_symbol_trading_info,
+        loss_per_lot_provider=provider.calculate_loss_per_lot,
     )
     executor = MT5BrokerExecutor(
         mt5_client=MT5Client(),

@@ -1,7 +1,7 @@
 SYMBOL_CONFIG = {
 
     "NAS100": {
-        "min_fvg_size": 10,
+        "min_fvg_size": 0.1,
         "pip_value": 1,
         "pip_size": 1,
     },
@@ -16,7 +16,7 @@ SYMBOL_CONFIG = {
         "pip_size": 0.01,
     },
     "XAUUSD": {
-        "min_fvg_size": 1.5,
+        "min_fvg_size": 0.1,
         "pip_value": 10,
         "pip_size": 0.1,
     },

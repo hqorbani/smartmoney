@@ -86,14 +86,13 @@ class StructureEventEngine:
             self._find_pattern(
                 relations,
                 (
-                    SwingRelationType.HIGHER_HIGH,
-                    SwingRelationType.HIGHER_LOW,
-                    SwingRelationType.HIGHER_HIGH,
+                    SwingRelationType.LOWER_LOW,
+                    SwingRelationType.LOWER_HIGH,
+                    SwingRelationType.LOWER_LOW,
                 ),
             )
             is not None
         )
-
     # ---------------------------------------------------------
 
     def _is_bullish_weakness(

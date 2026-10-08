@@ -19,11 +19,11 @@ class Config:
 
     TIMEFRAMES = [
         mt5.TIMEFRAME_M1,
-        mt5.TIMEFRAME_M2,
-        mt5.TIMEFRAME_M3,
-        mt5.TIMEFRAME_M4,
-        mt5.TIMEFRAME_M5,
-        mt5.TIMEFRAME_M6,
+        # mt5.TIMEFRAME_M2,
+        # mt5.TIMEFRAME_M3,
+        # mt5.TIMEFRAME_M4,
+        # mt5.TIMEFRAME_M5,
+        # mt5.TIMEFRAME_M6,
         # mt5.TIMEFRAME_H1
     ]
 
@@ -78,3 +78,4 @@ class Config:
     # Scores
     # ----------------------------
     OB_ACTIVE_FVG_SCORE = 2.0
+    MARKET_STRUCTURE_ALIGNMENT_SCORE = 2.0

@@ -9,9 +9,7 @@ class ScoreEngine:
         self.rules.append(rule)
 
     def calculate(self, signal, context):
-
         score = 0.0
-
         for rule in self.rules:
 
             score += rule.score(signal, context)
