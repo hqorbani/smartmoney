@@ -43,7 +43,7 @@ class Config:
 
     SORT_DESCENDING = False
 
-    TOP_SIGNALS = 10
+    TOP_SIGNALS = 20
 
     MINIMUM_SCORE = 0.0
 
@@ -72,3 +72,9 @@ class Config:
     # BackTest
     # ----------------------------
     EXPORT_BACKTEST_TRADE_DETAILS = False
+
+    
+    # ----------------------------
+    # Scores
+    # ----------------------------
+    OB_ACTIVE_FVG_SCORE = 2.0
