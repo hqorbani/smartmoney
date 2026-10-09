@@ -13,10 +13,11 @@ def make_context(rows):
     df["time"] = pd.to_datetime(df["time"])
 
     return MarketContext(
-        symbol="EURUSD",
+        symbol="XAUUSD",
         timeframe=15,
         df=df,
     )
+
 def test_bullish_entry_is_created_when_price_is_inside_orderblock():
 
     rows = []
@@ -70,7 +71,9 @@ def test_bullish_entry_is_created_when_price_is_inside_orderblock():
     EntryAnalyzer().analyze(context)
 
     assert context.entry_plan is not None
-    assert context.entry_plan.entry_price == 100.5
+    assert context.entry_plan.entry_price == (
+        context.entry_plan.orderblock.expanded_high
+    )
     assert context.entry_plan.orderblock is context.orderblocks[0]
     assert context.entry_plan.fvg is context.fvgs[0]
 
@@ -126,7 +129,9 @@ def test_bearish_entry_is_created_when_price_is_inside_orderblock():
     EntryAnalyzer().analyze(context)
 
     assert context.entry_plan is not None
-    assert context.entry_plan.entry_price == 100.5
+    assert context.entry_plan.entry_price == (
+        context.entry_plan.orderblock.expanded_low
+    )
     assert context.entry_plan.orderblock is context.orderblocks[0]
     assert context.entry_plan.fvg is context.fvgs[0]    
 
@@ -290,26 +295,16 @@ def test_bullish_entry_zones_are_split_into_three_equal_parts():
 
     zones = context.entry_plan.zones
 
-    assert [zone.name for zone in zones] == [
-        "INITIAL",
-        "MIDDLE",
-        "FINAL",
-    ]
+    assert len(zones) == 1
+    assert zones[0].name == "ENTRY"
 
-    ob = context.orderblocks[0]
+    assert zones[0].price_low == (
+        context.entry_plan.orderblock.expanded_low
+    )
+    assert zones[0].price_high == (
+        context.entry_plan.orderblock.expanded_high
+    )
 
-    low = ob.expanded_low
-    high = ob.expanded_high
-    zone_size = (high - low) / 3.0
-
-    assert zones[0].price_low == low
-    assert zones[0].price_high == low + zone_size
-
-    assert zones[1].price_low == low + zone_size
-    assert zones[1].price_high == low + (zone_size * 2)
-
-    assert zones[2].price_low == low + (zone_size * 2)
-    assert zones[2].price_high == high
 
 def test_bearish_entry_zones_follow_price_direction():
 
@@ -357,23 +352,12 @@ def test_bearish_entry_zones_follow_price_direction():
 
     zones = context.entry_plan.zones
 
-    assert [zone.name for zone in zones] == [
-        "INITIAL",
-        "MIDDLE",
-        "FINAL",
-    ]
+    assert len(zones) == 1
+    assert zones[0].name == "ENTRY"
 
-    ob = context.orderblocks[0]
-
-    low = ob.expanded_low
-    high = ob.expanded_high
-    zone_size = (high - low) / 3.0
-
-    assert zones[0].price_low == high - zone_size
-    assert zones[0].price_high == high
-
-    assert zones[1].price_low == high - (zone_size * 2)
-    assert zones[1].price_high == high - zone_size
-
-    assert zones[2].price_low == low
-    assert zones[2].price_high == high - (zone_size * 2)    
+    assert zones[0].price_low == (
+        context.entry_plan.orderblock.expanded_low
+    )
+    assert zones[0].price_high == (
+        context.entry_plan.orderblock.expanded_high
+    )

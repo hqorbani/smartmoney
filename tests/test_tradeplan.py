@@ -8,7 +8,7 @@ from smartmoney.trading.trade_plan import TradeDirection
 
 def make_context():
     context = MarketContext(
-        symbol="TEST",
+        symbol="XAUUSD",
         timeframe=15,
         df=None,
     )

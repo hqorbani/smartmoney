@@ -225,37 +225,40 @@ class Scheduler:
                         signal.status = "WAIT_ZONE"
 
                         if execution_price is not None and context.entry_plan is not None:
-                            initial_zone = next(
-                                zone
-                                for zone in context.entry_plan.zones
-                                if zone.name == "INITIAL"
-                            )
-
-                            middle_zone = next(
-                                zone
-                                for zone in context.entry_plan.zones
-                                if zone.name == "MIDDLE"
-                            )
-
-                            if signal.orderblock.attempt1_status == Attempt1Status.NOT_USED:
-                                if (
-                                    initial_zone.price_low
-                                    <= execution_price
-                                    <= initial_zone.price_high
-                                ):
-                                    signal.status = "READY"
-
-                            elif (
-                                signal.orderblock.attempt1_status == Attempt1Status.FAILED
-                                and signal.orderblock.attempt2_status
-                                == Attempt2Status.AVAILABLE
+                            if (
+                                execution_price is not None
+                                and context.entry_plan is not None
                             ):
-                                if (
-                                    middle_zone.price_low
-                                    <= execution_price
-                                    <= middle_zone.price_high
-                                ):
-                                    signal.status = "READY"
+                                entry_zone = next(
+                                    (
+                                        zone
+                                        for zone in context.entry_plan.zones
+                                        if zone.name == "ENTRY"
+                                    ),
+                                    None,
+                                )
+
+                                if entry_zone is not None:
+                                    attempt1_ready = (
+                                        signal.orderblock.attempt1_status
+                                        == Attempt1Status.NOT_USED
+                                    )
+
+                                    attempt2_ready = (
+                                        signal.orderblock.attempt1_status
+                                        == Attempt1Status.FAILED
+                                        and signal.orderblock.attempt2_status
+                                        == Attempt2Status.AVAILABLE
+                                    )
+
+                                    if (
+                                        attempt1_ready or attempt2_ready
+                                    ) and (
+                                        entry_zone.price_low
+                                        <= execution_price
+                                        <= entry_zone.price_high
+                                    ):
+                                        signal.status = "READY"
                         signal.direction = original_direction
 
                         context.signal = original_context_signal
@@ -346,16 +349,22 @@ class Scheduler:
 
                 attempt_zone = None
 
-                initial_zone = next(
-                    zone
-                    for zone in entry_plan.zones
-                    if zone.name == "INITIAL"
+                entry_zone = next(
+                    (
+                        zone
+                        for zone in entry_plan.zones
+                        if zone.name == "ENTRY"
+                    ),
+                    None,
                 )
-                middle_zone = next(
-                    zone
-                    for zone in entry_plan.zones
-                    if zone.name == "MIDDLE"
-                )
+
+                if entry_zone is None:
+                    self.logger.warning(
+                        "EXECUTION SKIPPED | symbol=%s | reason=NO_ENTRY_ZONE",
+                        signal.symbol,
+                    )
+                    continue
+
                 # -----------------------------------------
                 # Fresh tick for the actual signal symbol
                 # -----------------------------------------
@@ -393,14 +402,12 @@ class Scheduler:
                     continue
 
                 self.logger.debug(
-                    "ZONE | %s %s | initial=[%s,%s] | middle=[%s,%s] | "
+                    "ENTRY ZONE | %s %s | range=[%s,%s] | "
                     "attempt1=%s | attempt2=%s",
                     signal.symbol,
                     signal_direction,
-                    initial_zone.price_low,
-                    initial_zone.price_high,
-                    middle_zone.price_low,
-                    middle_zone.price_high,
+                    entry_zone.price_low,
+                    entry_zone.price_high,
                     orderblock.attempt1_status,
                     orderblock.attempt2_status,
                 )
@@ -408,10 +415,10 @@ class Scheduler:
                 if orderblock.attempt1_status == Attempt1Status.NOT_USED:
                     if self.zone_entry_service.is_first_entry(
                         orderblock,
-                        "INITIAL",
+                        "ENTRY",
                         zone_entry_price,
-                        initial_zone.price_low,
-                        initial_zone.price_high,
+                        entry_zone.price_low,
+                        entry_zone.price_high,
                     ):
                         attempt_zone = "INITIAL"
 
@@ -421,10 +428,10 @@ class Scheduler:
                 ):
                     if self.zone_entry_service.is_first_entry(
                         orderblock,
-                        "MIDDLE",
+                        "ENTRY",
                         zone_entry_price,
-                        middle_zone.price_low,
-                        middle_zone.price_high,
+                        entry_zone.price_low,
+                        entry_zone.price_high,
                     ):
                         attempt_zone = "MIDDLE"
 

@@ -10,7 +10,7 @@ def make_context(rows):
     df["time"] = pd.to_datetime(df["time"])
 
     return MarketContext(
-        symbol="TEST",
+        symbol="XAUUSD",
         timeframe=15,
         df=df,
     )

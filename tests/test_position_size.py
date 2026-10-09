@@ -12,7 +12,7 @@ def make_context(
     take_profit,
 ):
     context = MarketContext(
-        symbol="TEST",
+        symbol="XAUUSD",
         timeframe=15,
         df=None,
     )
@@ -35,6 +35,17 @@ def make_analyzer(
     tick_size=1.0,
     tick_value=1.0,
 ):
+    def loss_per_lot_provider(
+        symbol,
+        direction,
+        entry_price,
+        stop_loss,
+    ):
+        stop_distance = abs(entry_price - stop_loss)
+        if tick_size <= 0:
+            return None
+        return (stop_distance / tick_size) * tick_value
+
     return PositionSizeAnalyzer(
         balance=balance,
         risk_percent=risk_percent,
@@ -47,8 +58,8 @@ def make_analyzer(
             volume_max=100.0,
             volume_step=0.01,
         ),
+        loss_per_lot_provider=loss_per_lot_provider,
     )
-
 
 def test_bullish_position_size_is_calculated():
     context = make_context(
@@ -160,7 +171,7 @@ def test_position_size_respects_volume_minimum():
 
 def test_no_position_size_without_tradeplan():
     context = MarketContext(
-        symbol="TEST",
+        symbol="XAUUSD",
         timeframe=15,
         df=None,
     )

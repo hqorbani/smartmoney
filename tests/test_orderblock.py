@@ -1,5 +1,5 @@
 import pandas as pd
-
+from smartmoney.services.atr_service import ATRService
 from smartmoney.analyzers.fvg import FVGAnalyzer
 from smartmoney.analyzers.orderblock import OrderBlockAnalyzer
 from smartmoney.core.context import MarketContext
@@ -246,7 +246,7 @@ def test_orderblock_state_is_preserved_across_analysis_cycles():
     assert context.orderblocks[0] is ob_before
     assert context.orderblocks[0].mitigated is True  
 
-def test_bullish_orderblock_is_mitigated_when_price_enters_zone():
+def test_bullish_orderblock_is_mitigated_when_price_enters_zone(monkeypatch):
     context = make_context([
         # Bullish OB candle
         {
@@ -289,6 +289,11 @@ def test_bullish_orderblock_is_mitigated_when_price_enters_zone():
             "close": 105,
         },
     ])
+    monkeypatch.setattr(
+        ATRService,
+        "calculate",
+        lambda self, df, period: pd.Series(4.0, index=df.index),
+    )
 
     FVGAnalyzer().analyze(context)
     OrderBlockAnalyzer().analyze(context)
@@ -302,7 +307,7 @@ def test_bullish_orderblock_is_mitigated_when_price_enters_zone():
     assert ob.mitigation_index == 3
     assert ob.mitigation_time == pd.Timestamp("2026-01-01 10:45")    
 
-def test_bearish_orderblock_is_mitigated_when_price_enters_zone():
+def test_bearish_orderblock_is_mitigated_when_price_enters_zone(monkeypatch):
     context = make_context([
         # Bearish OB candle
         {
@@ -345,6 +350,11 @@ def test_bearish_orderblock_is_mitigated_when_price_enters_zone():
             "close": 97,
         },
     ])
+    monkeypatch.setattr(
+        ATRService,
+        "calculate",
+        lambda self, df, period: pd.Series(4.0, index=df.index),
+    )
 
     FVGAnalyzer().analyze(context)
     OrderBlockAnalyzer().analyze(context)

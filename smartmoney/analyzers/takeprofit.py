@@ -3,75 +3,40 @@ from smartmoney.config import Config
 from smartmoney.models.signal import SignalDirection
 from smartmoney.models.takeprofit import TakeProfitPlan
 
-
 class TakeProfitAnalyzer(Analyzer):
-
     priority = 70
 
     def analyze(self, context):
-
         context.take_profit_plan = None
 
         stop_loss_plan = context.stop_loss_plan
-
         if stop_loss_plan is None:
             return
 
-        stop_loss = float(stop_loss_plan.stop_loss)
-
-        if context.signal.direction == SignalDirection.BUY:
-            if context.current_ask is None:
-                return
-            entry_price = float(context.current_ask)
-
-        elif context.signal.direction == SignalDirection.SELL:
-            if context.current_bid is None:
-                return
-            entry_price = float(context.current_bid)
-
-        else:
-            return
-
-        risk = abs(entry_price - stop_loss)
-
-        if risk <= 0:
-            return
-
-        rr_ratio = float(Config.RR_RATIO)
-
-        if rr_ratio <= 0:
-            return
-
         entry_plan = stop_loss_plan.entry_plan
-
         if entry_plan is None:
             return
 
-        if context.signal.direction not in (
-            SignalDirection.BUY,
-            SignalDirection.SELL,
-        ):
+        direction = context.signal.direction
+        if direction not in (SignalDirection.BUY, SignalDirection.SELL):
             return
 
         entry_price = float(entry_plan.entry_price)
+        stop_loss = float(stop_loss_plan.stop_loss)
         risk = abs(entry_price - stop_loss)
 
         if risk <= 0:
             return
 
         rr_ratio = float(Config.RR_RATIO)
-
         if rr_ratio <= 0:
             return
 
-        if context.signal.direction == SignalDirection.BUY:
-            take_profit = entry_price + (risk * rr_ratio)
-
-        elif context.signal.direction == SignalDirection.SELL:
-            take_profit = entry_price - (risk * rr_ratio)
-
+        if direction == SignalDirection.BUY:
+            take_profit = entry_price + risk * rr_ratio
         else:
-            return
+            take_profit = entry_price - risk * rr_ratio
+
         context.take_profit_plan = TakeProfitPlan(
             take_profit=take_profit,
             stop_loss_plan=stop_loss_plan,

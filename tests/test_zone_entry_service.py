@@ -1,6 +1,10 @@
 import pandas as pd
 
-from smartmoney.models.orderblock import OrderBlock
+from smartmoney.models.orderblock import (
+    Attempt1Status,
+    Attempt2Status,
+    OrderBlock,
+)
 from smartmoney.services.zone_entry_service import ZoneEntryService
 
 
@@ -81,3 +85,52 @@ def test_unsupported_zone_raises_error():
         assert str(exc) == "Unsupported zone: FINAL"
     else:
         raise AssertionError("Expected ValueError")
+
+
+def test_entry_first_attempt_triggers_only_once_while_price_stays_inside():
+    service = ZoneEntryService()
+    orderblock = create_orderblock()
+
+    assert service.is_first_entry(
+        orderblock, "ENTRY", 105.0, 95.0, 110.0
+    ) is True
+
+    assert service.is_first_entry(
+        orderblock, "ENTRY", 106.0, 95.0, 110.0
+    ) is False
+
+
+def test_entry_second_attempt_can_trigger_after_first_attempt_failed():
+    service = ZoneEntryService()
+    orderblock = create_orderblock()
+
+    assert service.is_first_entry(
+        orderblock, "ENTRY", 105.0, 95.0, 110.0
+    ) is True
+
+    orderblock.attempt1_status = Attempt1Status.FAILED
+    orderblock.attempt2_status = Attempt2Status.AVAILABLE
+
+    assert service.is_first_entry(
+        orderblock, "ENTRY", 106.0, 95.0, 110.0
+    ) is True
+
+    assert orderblock.initial_zone_inside is True
+    assert orderblock.middle_zone_inside is True
+
+
+def test_entry_resets_current_attempt_flag_when_price_leaves_zone():
+    service = ZoneEntryService()
+    orderblock = create_orderblock()
+
+    assert service.is_first_entry(
+        orderblock, "ENTRY", 105.0, 95.0, 110.0
+    ) is True
+
+    assert service.is_first_entry(
+        orderblock, "ENTRY", 115.0, 95.0, 110.0
+    ) is False
+
+    assert service.is_first_entry(
+        orderblock, "ENTRY", 105.0, 95.0, 110.0
+    ) is True
