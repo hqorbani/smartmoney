@@ -162,13 +162,16 @@ class MarketStructureEngine:
 
         structure = context.market_structure
 
-        for event in events:
+        if self._detect_bearish_choch(context, events):
+            return
 
+        for event in events:
             if event.type == StructureEventType.BEARISH_WEAKNESS:
                 structure.bias = MarketBias.TRANSITION
                 return
 
         self._detect_bullish_bos(context, events)
+
     # ==================================================
     # BEARISH
     # ==================================================
@@ -180,6 +183,9 @@ class MarketStructureEngine:
     ) -> None:
 
         structure = context.market_structure
+
+        if self._detect_bullish_choch(context, events):
+            return
 
         for event in events:
             if event.type == StructureEventType.BULLISH_WEAKNESS:
@@ -404,6 +410,85 @@ class MarketStructureEngine:
         events.append(
             StructureEvent(type=StructureEventType.BEARISH_BOS)
         )
+
+    def _detect_bearish_choch(
+        self,
+        context: MarketContext,
+        events: list[StructureEvent],
+    ) -> bool:
+        structure = context.market_structure
+        level = structure.protected_low
+
+        if level.price is None or level.swing_index is None:
+            return False
+
+        swing = self._get_swing_by_index(
+            context,
+            level.swing_index,
+        )
+
+        if swing is None or swing.is_broken:
+            return False
+
+        if not self._is_bearish_displacement(context):
+            return False
+
+        current_close = context.df.iloc[-1]["close"]
+
+        if current_close >= level.price:
+            return False
+
+        swing.is_broken = True
+        structure.choch_count += 1
+        structure.bias = MarketBias.BEARISH
+
+        events.append(
+            StructureEvent(
+                type=StructureEventType.BEARISH_CHOCH
+            )
+        )
+
+        return True
+
+    def _detect_bullish_choch(
+        self,
+        context: MarketContext,
+        events: list[StructureEvent],
+    ) -> bool:
+        structure = context.market_structure
+        level = structure.protected_high
+
+        if level.price is None or level.swing_index is None:
+            return False
+
+        swing = self._get_swing_by_index(
+            context,
+            level.swing_index,
+        )
+
+        if swing is None or swing.is_broken:
+            return False
+
+        if not self._is_bullish_displacement(context):
+            return False
+
+        current_close = context.df.iloc[-1]["close"]
+
+        if current_close <= level.price:
+            return False
+
+        swing.is_broken = True
+        structure.choch_count += 1
+        structure.bias = MarketBias.BULLISH
+
+        events.append(
+            StructureEvent(
+                type=StructureEventType.BULLISH_CHOCH
+            )
+        )
+
+        return True
+
     def _is_bearish_displacement(
         self,
         context: MarketContext,

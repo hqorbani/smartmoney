@@ -20,6 +20,10 @@ class StructureEventType(Enum):
 
     BEARISH_BOS = "BEARISH_BOS"
 
+    BULLISH_CHOCH = "BULLISH_CHOCH"
+
+    BEARISH_CHOCH = "BEARISH_CHOCH"
+
 
 @dataclass(slots=True)
 class StructureEvent:

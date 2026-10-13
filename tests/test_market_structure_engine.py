@@ -3,7 +3,7 @@ import pandas as pd
 from smartmoney.core.context import MarketContext
 from smartmoney.core.market_structure_engine import MarketStructureEngine
 from smartmoney.models.market_structure import MarketBias
-from smartmoney.models.structure_event import StructureEvent
+from smartmoney.models.structure_event import StructureEvent, StructureEventType
 from smartmoney.models.structure_level import StructureLevel
 from smartmoney.models.swing import Swing
 
@@ -230,3 +230,147 @@ def test_bearish_bos_event_is_not_emitted_twice():
     ]
 
     assert len(bearish_bos_events) == 1
+
+def test_bearish_choch_breaks_protected_low_once():
+    context = make_context(
+        bias=MarketBias.BULLISH,
+        candle_open=102.0,
+        candle_close=98.0,
+        candle_high=103.0,
+        candle_low=97.0,
+    )
+
+    protected_index = 1
+    context.market_structure.protected_low = StructureLevel(
+        price=100.0,
+        swing_index=protected_index,
+    )
+    context.swings.append(
+        Swing(
+            index=protected_index,
+            time=pd.Timestamp("2026-01-02"),
+            price=100.0,
+            is_high=False,
+        )
+    )
+
+    engine = MarketStructureEngine()
+    events = []
+
+    engine.update(context, events)
+    engine.update(context, events)
+
+    assert context.market_structure.bias == MarketBias.BEARISH
+    assert context.market_structure.choch_count == 1
+    assert sum(
+        event.type == StructureEventType.BEARISH_CHOCH
+        for event in events
+    ) == 1
+
+
+def test_bullish_choch_breaks_protected_high_once():
+    context = make_context(
+        bias=MarketBias.BEARISH,
+        candle_open=98.0,
+        candle_close=102.0,
+        candle_high=103.0,
+        candle_low=97.0,
+    )
+
+    protected_index = 1
+    context.market_structure.protected_high = StructureLevel(
+        price=100.0,
+        swing_index=protected_index,
+    )
+    context.swings.append(
+        Swing(
+            index=protected_index,
+            time=pd.Timestamp("2026-01-02"),
+            price=100.0,
+            is_high=True,
+        )
+    )
+
+    engine = MarketStructureEngine()
+    events = []
+
+    engine.update(context, events)
+    engine.update(context, events)
+
+    assert context.market_structure.bias == MarketBias.BULLISH
+    assert context.market_structure.choch_count == 1
+    assert sum(
+        event.type == StructureEventType.BULLISH_CHOCH
+        for event in events
+    ) == 1
+
+def test_bearish_choch_is_not_emitted_above_protected_low():
+    context = make_context(
+        bias=MarketBias.BULLISH,
+        candle_open=102.0,
+        candle_close=101.0,
+        candle_high=103.0,
+        candle_low=100.5,
+    )
+
+    protected_index = 1
+    context.market_structure.protected_low = StructureLevel(
+        price=100.0,
+        swing_index=protected_index,
+    )
+    context.swings.append(
+        Swing(
+            index=protected_index,
+            time=pd.Timestamp("2026-01-02"),
+            price=100.0,
+            is_high=False,
+        )
+    )
+
+    engine = MarketStructureEngine()
+    events = []
+
+    engine.update(context, events)
+
+    assert context.market_structure.bias == MarketBias.BULLISH
+    assert context.market_structure.choch_count == 0
+    assert not any(
+        event.type == StructureEventType.BEARISH_CHOCH
+        for event in events
+    )
+
+
+def test_bullish_choch_is_not_emitted_below_protected_high():
+    context = make_context(
+        bias=MarketBias.BEARISH,
+        candle_open=98.0,
+        candle_close=99.0,
+        candle_high=99.5,
+        candle_low=97.0,
+    )
+
+    protected_index = 1
+    context.market_structure.protected_high = StructureLevel(
+        price=100.0,
+        swing_index=protected_index,
+    )
+    context.swings.append(
+        Swing(
+            index=protected_index,
+            time=pd.Timestamp("2026-01-02"),
+            price=100.0,
+            is_high=True,
+        )
+    )
+
+    engine = MarketStructureEngine()
+    events = []
+
+    engine.update(context, events)
+
+    assert context.market_structure.bias == MarketBias.BEARISH
+    assert context.market_structure.choch_count == 0
+    assert not any(
+        event.type == StructureEventType.BULLISH_CHOCH
+        for event in events
+    )
