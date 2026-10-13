@@ -374,3 +374,97 @@ def test_bullish_choch_is_not_emitted_below_protected_high():
         event.type == StructureEventType.BULLISH_CHOCH
         for event in events
     )
+
+def test_bearish_choch_does_not_emit_bearish_bos_on_same_update():
+    context = make_context(
+        bias=MarketBias.BULLISH,
+        candle_open=102.0,
+        candle_close=98.0,
+        candle_high=103.0,
+        candle_low=97.0,
+    )
+
+    protected_index = 1
+    context.market_structure.protected_low = StructureLevel(
+        price=100.0,
+        swing_index=protected_index,
+    )
+    context.swings.append(
+        Swing(
+            index=protected_index,
+            time=pd.Timestamp("2026-01-02"),
+            price=100.0,
+            is_high=False,
+        )
+    )
+
+    engine = MarketStructureEngine()
+    events = []
+
+    engine.update(context, events)
+
+    assert context.market_structure.bias == MarketBias.BEARISH
+    assert any(
+        event.type == StructureEventType.BEARISH_CHOCH
+        for event in events
+    )
+    assert not any(
+        event.type == StructureEventType.BEARISH_BOS
+        for event in events
+    )
+
+
+def test_bearish_choch_does_not_use_stale_structural_low_for_bos():
+    context = make_context(
+        bias=MarketBias.BULLISH,
+        candle_open=102.0,
+        candle_close=98.0,
+        candle_high=103.0,
+        candle_low=97.0,
+    )
+
+    context.market_structure.protected_low = StructureLevel(
+        price=100.0,
+        swing_index=1,
+    )
+    context.market_structure.structural_low = StructureLevel(
+        price=99.0,
+        swing_index=0,
+    )
+
+    context.swings.extend([
+        Swing(
+            index=0,
+            time=pd.Timestamp("2026-01-01"),
+            price=99.0,
+            is_high=False,
+        ),
+        Swing(
+            index=1,
+            time=pd.Timestamp("2026-01-02"),
+            price=100.0,
+            is_high=False,
+        ),
+    ])
+
+    engine = MarketStructureEngine()
+    events = []
+
+    engine.update(context, events)
+
+    assert context.market_structure.bias == MarketBias.BEARISH
+    assert any(
+        event.type == StructureEventType.BEARISH_CHOCH
+        for event in events
+    )
+
+    context.df.loc[context.df.index[-1], "open"] = 98.0
+    context.df.loc[context.df.index[-1], "close"] = 97.0
+
+    events = []
+    engine.update(context, events)
+
+    assert not any(
+        event.type == StructureEventType.BEARISH_BOS
+        for event in events
+    )

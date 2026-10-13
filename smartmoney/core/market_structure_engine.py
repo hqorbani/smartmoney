@@ -1,5 +1,5 @@
 from smartmoney.core.context import MarketContext
-
+from smartmoney.models.structure_level import StructureLevel
 from smartmoney.models.market_structure import (
     MarketBias,
 )
@@ -441,7 +441,7 @@ class MarketStructureEngine:
         swing.is_broken = True
         structure.choch_count += 1
         structure.bias = MarketBias.BEARISH
-
+        structure.structural_low = StructureLevel()
         events.append(
             StructureEvent(
                 type=StructureEventType.BEARISH_CHOCH
@@ -480,7 +480,7 @@ class MarketStructureEngine:
         swing.is_broken = True
         structure.choch_count += 1
         structure.bias = MarketBias.BULLISH
-
+        structure.structural_high = StructureLevel()
         events.append(
             StructureEvent(
                 type=StructureEventType.BULLISH_CHOCH
