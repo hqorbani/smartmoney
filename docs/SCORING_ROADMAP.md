@@ -119,16 +119,25 @@ Relevant configuration in `smartmoney/config.py`: `OB_ACTIVE_FVG_SCORE = 2.0`, `
 
 ### Gaps and correctness risks confirmed in the inspected code
 
-- `MarketStructureEngine` increments BOS only in its bullish handler. A corresponding bearish BOS implementation is absent.
-- The bullish displacement check is only `close > open`; this is not a robust displacement-strength measure.
-- `MarketStructureEngine._handle_transition()` is a placeholder; CHOCH/MSS processing is not implemented there.
-- `StructureEventEngine` currently defines bullish weakness with the same HH-HL-HH pattern used for bullish confirmation; bearish weakness also uses that bullish pattern. These definitions are not reliable evidence for scoring and must be corrected and tested.
-- BOS/CHOCH enum values exist, but that does not mean events are emitted with reliable direction, level, timestamp, and source association.
-- OB has mitigation state but no independent retest count. Do not infer repeated retests from a boolean alone.
-- FVG stores first mitigation/fill metadata, not complete repeated-fill history.
-- No verified dedicated liquidity-sweep or Premium/Discount engine was identified in the reviewed models/context.
-- Scheduler currently queries with `minimum_score=0.0` and `sort_by="distance"`. Scores are calculated, but current configuration does not prioritize by score or reject candidates using a meaningful score threshold.
-- Entry readiness means price is in the zone and an attempt is available; it does not prove rejection, displacement, or micro-structure confirmation.
+* Bullish and bearish BOS detection, counting, and `BULLISH_BOS` / `BEARISH_BOS` event emission are implemented and covered by tests. False-break handling and CHOCH/MSS transition behavior remain outstanding.
+
+* The bullish displacement check is only `close > open`; this is not a robust displacement-strength measure.
+
+* `MarketStructureEngine._handle_transition()` is a placeholder; CHOCH/MSS processing is not implemented there.
+
+* `StructureEventEngine` currently defines bullish weakness with the same HH-HL-HH pattern used for bullish confirmation; bearish weakness also uses that bullish pattern. These definitions are not reliable evidence for scoring and must be corrected and tested.
+
+* BOS events are emitted with their direction, but reliable event metadata and explicit event-to-price/time association still need to be verified and completed.
+
+* OB has mitigation state but no independent retest count. Do not infer repeated retests from a boolean alone.
+
+* FVG stores first mitigation/fill metadata, not complete repeated-fill history.
+
+* No verified dedicated liquidity-sweep or Premium/Discount engine was identified in the reviewed models/context.
+
+* Scheduler currently queries with `minimum_score=0.0` and `sort_by="distance"`. Scores are calculated, but current configuration does not prioritize by score or reject candidates using a meaningful score threshold.
+
+* Entry readiness means price is in the zone and an attempt is available; it does not prove rejection, displacement, or micro-structure confirmation.
 
 ## Implementation stages and completion log
 
@@ -142,11 +151,13 @@ Mark a stage complete only after code review and focused tests pass. Record comm
 ### Stage 1 — Repair and test structure events / market structure
 
 * **Status:** In progress.
-* **Completed:** Corrected bullish and bearish weakness pattern definitions in `StructureEventEngine`; added focused tests for bullish confirmation, bearish confirmation, both weakness patterns, and fewer than three relations.
-* **Validation:** `pytest -q tests/test_structure_event_engine.py` — 5 passed; `pytest -q` — 253 passed.
-* **Remaining:** Implement and test direction-aware bullish and bearish BOS, false-break handling, CHOCH/MSS transition behavior, and event metadata needed for reliable event-to-price/time association.
+* **Completed:** Corrected bullish and bearish weakness pattern definitions in `StructureEventEngine`; added focused tests for bullish confirmation, bearish confirmation, both weakness patterns, and fewer than three relations. Implemented direction-aware bullish and bearish BOS detection in `MarketStructureEngine`. A detected BOS increments the corresponding counter and emits `BULLISH_BOS` or `BEARISH_BOS`. Added regression tests confirming that repeated processing of the same context does not emit the same BOS event or count it again.
+* **Validation:** `pytest -q tests/test_structure_event_engine.py` — 5 passed (earlier validation). `pytest -q tests/test_market_structure_engine.py` — 9 passed after BOS event and duplicate-processing tests. `pytest -q` — 262 passed after the BOS changes. `git diff --check` — clean.
+* **Implementation commit:** `ecaaf2f` — `Emit bullish and bearish BOS events`.
+* **Remaining:** Implement and test false-break handling, CHOCH/MSS transition behavior, and event metadata sufficient for reliable event-to-price/time association.
 * **Scope:** Correct weakness event patterns; implement and test direction-aware bullish and bearish BOS; define CHOCH/MSS transition behavior; emit event details sufficient to associate events with price levels and time.
 * **Acceptance:** Unit tests cover bullish and bearish cases, false breaks, transition behavior, and repeated processing without duplicate BOS counting. Event definitions must be explicit and consistent with ICT intent.
+
 
 
 ### Stage 2 — Feature model and evidence links
