@@ -182,12 +182,11 @@ class MarketStructureEngine:
         structure = context.market_structure
 
         for event in events:
-
             if event.type == StructureEventType.BULLISH_WEAKNESS:
-
                 structure.bias = MarketBias.TRANSITION
-
                 return
+
+        self._detect_bearish_bos(context)
 
     # ==================================================
     # TRANSITION
@@ -368,6 +367,42 @@ class MarketStructureEngine:
         swing.is_broken = True
 
         structure.bos_count += 1
+
+    def _detect_bearish_bos(
+        self,
+        context: MarketContext,
+    ) -> None:
+        structure = context.market_structure
+        level = structure.structural_low
+
+        if level.price is None or level.swing_index is None:
+            return
+
+        swing = self._get_swing_by_index(
+            context,
+            level.swing_index,
+        )
+
+        if swing is None or swing.is_broken:
+            return
+
+        if not self._is_bearish_displacement(context):
+            return
+
+        current_close = context.df.iloc[-1]["close"]
+
+        if current_close >= level.price:
+            return
+
+        swing.is_broken = True
+        structure.bos_count += 1
+
+    def _is_bearish_displacement(
+        self,
+        context: MarketContext,
+    ) -> bool:
+        candle = context.df.iloc[-1]
+        return candle["close"] < candle["open"]
 
     def _is_bullish_displacement(
         self,
