@@ -99,14 +99,13 @@ class StructureEventEngine:
         self,
         relations: list[SwingRelation],
     ) -> bool:
-
         return (
             self._find_pattern(
                 relations,
                 (
-                    SwingRelationType.HIGHER_HIGH,
-                    SwingRelationType.HIGHER_LOW,
-                    SwingRelationType.HIGHER_HIGH,
+                    SwingRelationType.LOWER_LOW,
+                    SwingRelationType.LOWER_HIGH,
+                    SwingRelationType.LOWER_LOW,
                 ),
             )
             is not None
@@ -118,7 +117,6 @@ class StructureEventEngine:
         self,
         relations: list[SwingRelation],
     ) -> bool:
-
         return (
             self._find_pattern(
                 relations,
