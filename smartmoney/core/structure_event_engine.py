@@ -105,7 +105,7 @@ class StructureEventEngine:
                 (
                     SwingRelationType.LOWER_LOW,
                     SwingRelationType.LOWER_HIGH,
-                    SwingRelationType.LOWER_LOW,
+                    SwingRelationType.HIGHER_LOW,
                 ),
             )
             is not None
@@ -123,7 +123,7 @@ class StructureEventEngine:
                 (
                     SwingRelationType.HIGHER_HIGH,
                     SwingRelationType.HIGHER_LOW,
-                    SwingRelationType.HIGHER_HIGH,
+                    SwingRelationType.LOWER_HIGH,
                 ),
             )
             is not None

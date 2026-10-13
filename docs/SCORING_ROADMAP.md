@@ -140,9 +140,14 @@ Mark a stage complete only after code review and focused tests pass. Record comm
 - **Baseline:** `feb39ec` (verify HEAD before starting changes).
 
 ### Stage 1 — Repair and test structure events / market structure
-- **Status:** Not started.
-- **Scope:** Correct weakness event patterns; implement and test direction-aware bullish and bearish BOS; define CHOCH/MSS transition behavior; emit event details sufficient to associate events with price levels and time.
-- **Acceptance:** Unit tests cover bullish and bearish cases, false breaks, transition behavior, and repeated processing without duplicate BOS counting. Event definitions must be explicit and consistent with ICT intent.
+
+* **Status:** In progress.
+* **Completed:** Corrected bullish and bearish weakness pattern definitions in `StructureEventEngine`; added focused tests for bullish confirmation, bearish confirmation, both weakness patterns, and fewer than three relations.
+* **Validation:** `pytest -q tests/test_structure_event_engine.py` — 5 passed; `pytest -q` — 253 passed.
+* **Remaining:** Implement and test direction-aware bullish and bearish BOS, false-break handling, CHOCH/MSS transition behavior, and event metadata needed for reliable event-to-price/time association.
+* **Scope:** Correct weakness event patterns; implement and test direction-aware bullish and bearish BOS; define CHOCH/MSS transition behavior; emit event details sufficient to associate events with price levels and time.
+* **Acceptance:** Unit tests cover bullish and bearish cases, false breaks, transition behavior, and repeated processing without duplicate BOS counting. Event definitions must be explicit and consistent with ICT intent.
+
 
 ### Stage 2 — Feature model and evidence links
 - **Status:** Not started.
