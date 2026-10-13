@@ -168,7 +168,7 @@ class MarketStructureEngine:
                 structure.bias = MarketBias.TRANSITION
                 return
 
-        self._detect_bullish_bos(context)
+        self._detect_bullish_bos(context, events)
     # ==================================================
     # BEARISH
     # ==================================================
@@ -186,7 +186,7 @@ class MarketStructureEngine:
                 structure.bias = MarketBias.TRANSITION
                 return
 
-        self._detect_bearish_bos(context)
+        self._detect_bearish_bos(context, events)
 
     # ==================================================
     # TRANSITION
@@ -337,6 +337,7 @@ class MarketStructureEngine:
     def _detect_bullish_bos(
         self,
         context: MarketContext,
+        events: list[StructureEvent],
     ) -> None:
         structure = context.market_structure
         level = structure.structural_high
@@ -367,10 +368,14 @@ class MarketStructureEngine:
         swing.is_broken = True
 
         structure.bos_count += 1
+        events.append(
+            StructureEvent(type=StructureEventType.BULLISH_BOS)
+        )
 
     def _detect_bearish_bos(
         self,
         context: MarketContext,
+        events: list[StructureEvent],
     ) -> None:
         structure = context.market_structure
         level = structure.structural_low
@@ -396,7 +401,9 @@ class MarketStructureEngine:
 
         swing.is_broken = True
         structure.bos_count += 1
-
+        events.append(
+            StructureEvent(type=StructureEventType.BEARISH_BOS)
+        )
     def _is_bearish_displacement(
         self,
         context: MarketContext,

@@ -143,3 +143,90 @@ def test_bearish_bos_is_not_counted_twice():
 
     engine.update(context, [])
     engine.update(context, [])
+
+
+def test_bullish_bos_emits_event():
+    context = make_context(
+        bias=MarketBias.BULLISH,
+        level_price=100.0,
+        candle_open=100.0,
+        candle_close=102.0,
+    )
+
+    engine = MarketStructureEngine()
+    events = []
+
+    engine.update(context, events)
+
+    assert any(
+        event.type.name == "BULLISH_BOS"
+        for event in events
+    )
+
+
+def test_bearish_bos_emits_event():
+    context = make_context(
+        bias=MarketBias.BEARISH,
+        level_price=100.0,
+        candle_open=100.0,
+        candle_close=98.0,
+        candle_high=101.0,
+        candle_low=97.0,
+    )
+
+    engine = MarketStructureEngine()
+    events = []
+
+    engine.update(context, events)
+
+    assert any(
+        event.type.name == "BEARISH_BOS"
+        for event in events
+    )
+
+def test_bullish_bos_event_is_not_emitted_twice():
+    context = make_context(
+        bias=MarketBias.BULLISH,
+        level_price=100.0,
+        candle_open=100.0,
+        candle_close=102.0,
+    )
+
+    engine = MarketStructureEngine()
+    events = []
+
+    engine.update(context, events)
+    engine.update(context, events)
+
+    bullish_bos_events = [
+        event
+        for event in events
+        if event.type.name == "BULLISH_BOS"
+    ]
+
+    assert len(bullish_bos_events) == 1
+
+
+def test_bearish_bos_event_is_not_emitted_twice():
+    context = make_context(
+        bias=MarketBias.BEARISH,
+        level_price=100.0,
+        candle_open=100.0,
+        candle_close=98.0,
+        candle_high=101.0,
+        candle_low=97.0,
+    )
+
+    engine = MarketStructureEngine()
+    events = []
+
+    engine.update(context, events)
+    engine.update(context, events)
+
+    bearish_bos_events = [
+        event
+        for event in events
+        if event.type.name == "BEARISH_BOS"
+    ]
+
+    assert len(bearish_bos_events) == 1
