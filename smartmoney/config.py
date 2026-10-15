@@ -20,9 +20,9 @@ class Config:
     TIMEFRAMES = [
         mt5.TIMEFRAME_M1,
         # mt5.TIMEFRAME_M2,
-        mt5.TIMEFRAME_M3,
-        # mt5.TIMEFRAME_M4,
-        mt5.TIMEFRAME_M5,
+        # mt5.TIMEFRAME_M3,
+        # # mt5.TIMEFRAME_M4,
+        # mt5.TIMEFRAME_M5,
         # mt5.TIMEFRAME_M6,
         # mt5.TIMEFRAME_H1
     ]
@@ -39,11 +39,11 @@ class Config:
     # Query
     # ----------------------------
 
-    SORT_BY = "distance"
+    SORT_BY = "score"
 
-    SORT_DESCENDING = False
+    SORT_DESCENDING = True
 
-    TOP_SIGNALS = 20
+    TOP_SIGNALS = 5
 
     MINIMUM_SCORE = 0.0
 
