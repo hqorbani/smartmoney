@@ -170,7 +170,20 @@ class MarketStructureEngine:
                 structure.bias = MarketBias.TRANSITION
                 return
 
+        if structure.structural_high.price is None:
+            swing = self._find_swing_after_choch(
+                context,
+                is_high=True,
+            )
+
+            if swing is not None:
+                structure.structural_high = StructureLevel(
+                    price=swing.price,
+                    swing_index=swing.index,
+                )
+
         self._detect_bullish_bos(context, events)
+
 
     # ==================================================
     # BEARISH
@@ -191,6 +204,18 @@ class MarketStructureEngine:
             if event.type == StructureEventType.BULLISH_WEAKNESS:
                 structure.bias = MarketBias.TRANSITION
                 return
+
+        if structure.structural_low.price is None:
+            swing = self._find_swing_after_choch(
+                context,
+                is_high=False,
+            )
+
+            if swing is not None:
+                structure.structural_low = StructureLevel(
+                    price=swing.price,
+                    swing_index=swing.index,
+                )
 
         self._detect_bearish_bos(context, events)
 
@@ -441,6 +466,7 @@ class MarketStructureEngine:
         swing.is_broken = True
         structure.choch_count += 1
         structure.bias = MarketBias.BEARISH
+        structure.choch_time = context.df.iloc[-1]["time"]
         structure.structural_low = StructureLevel()
         events.append(
             StructureEvent(
@@ -480,6 +506,7 @@ class MarketStructureEngine:
         swing.is_broken = True
         structure.choch_count += 1
         structure.bias = MarketBias.BULLISH
+        structure.choch_time = context.df.iloc[-1]["time"]
         structure.structural_high = StructureLevel()
         events.append(
             StructureEvent(
@@ -516,4 +543,30 @@ class MarketStructureEngine:
             if swing.index == swing_index:
                 return swing
 
-        return None     
+        return None
+
+    def _find_swing_after_choch(
+        self,
+        context: MarketContext,
+        *,
+        is_high: bool,
+    ) -> Swing | None:
+        structure = context.market_structure
+        choch_time = structure.choch_time
+
+        if choch_time is None:
+            return None
+
+        candidates = [
+            swing
+            for swing in context.swings
+            if swing.time > choch_time
+            and swing.is_high == is_high
+            and swing.is_valid
+            and not swing.is_broken
+        ]
+
+        if not candidates:
+            return None
+
+        return max(candidates, key=lambda swing: swing.time)

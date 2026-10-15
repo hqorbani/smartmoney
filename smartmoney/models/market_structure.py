@@ -1,3 +1,4 @@
+import pandas as pd
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -55,3 +56,5 @@ class MarketStructure:
     structural_low: StructureLevel = field(
         default_factory=StructureLevel,
     )
+
+    choch_time: pd.Timestamp | None = None

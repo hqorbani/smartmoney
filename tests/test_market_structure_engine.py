@@ -21,6 +21,7 @@ def make_context(
     df = pd.DataFrame(
         [
             {
+                "time": pd.Timestamp("2026-01-03"),
                 "open": candle_open,
                 "high": candle_high,
                 "low": candle_low,
@@ -465,6 +466,124 @@ def test_bearish_choch_does_not_use_stale_structural_low_for_bos():
     engine.update(context, events)
 
     assert not any(
+        event.type == StructureEventType.BEARISH_BOS
+        for event in events
+    )
+
+def test_find_swing_after_choch_selects_latest_matching_swing():
+    context = make_context(bias=MarketBias.BEARISH)
+    context.market_structure.choch_time = pd.Timestamp("2026-01-03")
+
+    context.swings.extend([
+        Swing(
+            index=1,
+            time=pd.Timestamp("2026-01-02"),
+            price=95.0,
+            is_high=False,
+        ),
+        Swing(
+            index=2,
+            time=pd.Timestamp("2026-01-04"),
+            price=92.0,
+            is_high=False,
+        ),
+        Swing(
+            index=3,
+            time=pd.Timestamp("2026-01-05"),
+            price=90.0,
+            is_high=False,
+        ),
+        Swing(
+            index=4,
+            time=pd.Timestamp("2026-01-06"),
+            price=105.0,
+            is_high=True,
+        ),
+    ])
+
+    engine = MarketStructureEngine()
+
+    swing = engine._find_swing_after_choch(
+        context,
+        is_high=False,
+    )
+
+    assert swing is not None
+    assert swing.index == 3
+    assert swing.price == 90.0
+
+
+def test_choch_rebuilds_structure_and_allows_bos():
+    context = make_context(
+        bias=MarketBias.BULLISH,
+        candle_open=102.0,
+        candle_close=98.0,
+        candle_high=103.0,
+        candle_low=97.0,
+    )
+
+    structure = context.market_structure
+    structure.protected_low = StructureLevel(
+        price=100.0,
+        swing_index=1,
+    )
+    structure.structural_low = StructureLevel(
+        price=99.0,
+        swing_index=0,
+    )
+
+    context.swings.append(
+        Swing(
+            index=1,
+            time=pd.Timestamp("2026-01-02"),
+            price=100.0,
+            is_high=False,
+        )
+    )
+
+    engine = MarketStructureEngine()
+    events = []
+
+    # مرحله اول: CHOCH باید سطح ساختاری قدیمی را پاک کند.
+    engine.update(context, events)
+
+    assert structure.bias == MarketBias.BEARISH
+    assert structure.structural_low.price is None
+    assert any(
+        event.type == StructureEventType.BEARISH_CHOCH
+        for event in events
+    )
+    assert not any(
+        event.type == StructureEventType.BEARISH_BOS
+        for event in events
+    )
+
+    # مرحله دوم: یک swing low جدید بعد از CHOCH تشکیل می‌شود.
+    context.swings.append(
+        Swing(
+            index=2,
+            time=pd.Timestamp("2026-01-04"),
+            price=95.0,
+            is_high=False,
+        )
+    )
+
+    # مرحله سوم: قیمت زیر swing low جدید بسته می‌شود.
+    context.df.loc[context.df.index[-1], "time"] = pd.Timestamp(
+        "2026-01-05"
+    )
+    context.df.loc[context.df.index[-1], "open"] = 94.0
+    context.df.loc[context.df.index[-1], "high"] = 94.5
+    context.df.loc[context.df.index[-1], "low"] = 92.0
+    context.df.loc[context.df.index[-1], "close"] = 93.0
+
+    events = []
+    engine.update(context, events)
+
+    assert structure.structural_low.price == 95.0
+    assert structure.structural_low.swing_index == 2
+    assert structure.bos_count == 1
+    assert any(
         event.type == StructureEventType.BEARISH_BOS
         for event in events
     )
