@@ -46,18 +46,6 @@ class OrderBlockEntryReadinessScore(ScoreRule):
         if entry_zone is None:
             return 0.0
         
-        print(
-            "ENTRY READINESS DEBUG |",
-            "symbol=", signal.symbol,
-            "direction=", direction,
-            "price=", execution_price,
-            "zone_low=", entry_zone.price_low,
-            "zone_high=", entry_zone.price_high,
-            "ob_status=", orderblock.status,
-            "attempt1=", orderblock.attempt1_status,
-            "attempt2=", orderblock.attempt2_status,
-        )
-
         if not entry_zone.price_low <= execution_price <= entry_zone.price_high:
             return 0.0
 
