@@ -587,3 +587,371 @@ def test_choch_rebuilds_structure_and_allows_bos():
         event.type == StructureEventType.BEARISH_BOS
         for event in events
     )
+
+def test_bullish_bos_can_be_detected_on_two_distinct_levels():
+    context = make_context(
+        bias=MarketBias.BULLISH,
+        candle_open=105.0,
+        candle_close=111.0,
+        candle_high=112.0,
+        candle_low=104.0,
+    )
+
+    structure = context.market_structure
+    structure.structural_high = StructureLevel(
+        price=100.0,
+        swing_index=1,
+    )
+
+    context.swings.extend([
+        Swing(
+            index=1,
+            time=pd.Timestamp("2026-01-01"),
+            price=100.0,
+            is_high=True,
+        ),
+        Swing(
+            index=2,
+            time=pd.Timestamp("2026-01-02"),
+            price=110.0,
+            is_high=True,
+        ),
+    ])
+
+    engine = MarketStructureEngine()
+    events = []
+
+    engine.update(context, events)
+
+    assert structure.bos_count == 1
+    assert any(
+        event.type == StructureEventType.BULLISH_BOS
+        for event in events
+    )
+
+    # سطح بعدی شکسته می‌شود.
+    structure.structural_high = StructureLevel(
+        price=110.0,
+        swing_index=2,
+    )
+
+    context.df.loc[context.df.index[-1], "open"] = 115.0
+    context.df.loc[context.df.index[-1], "close"] = 121.0
+    context.df.loc[context.df.index[-1], "high"] = 122.0
+    context.df.loc[context.df.index[-1], "low"] = 114.0
+
+    events = []
+    engine.update(context, events)
+
+    assert structure.bos_count == 2
+    assert any(
+        event.type == StructureEventType.BULLISH_BOS
+        for event in events
+    )
+
+
+def test_bearish_bos_can_be_detected_on_two_distinct_levels():
+    context = make_context(
+        bias=MarketBias.BEARISH,
+        candle_open=95.0,
+        candle_close=89.0,
+        candle_high=96.0,
+        candle_low=88.0,
+    )
+
+    structure = context.market_structure
+    structure.structural_low = StructureLevel(
+        price=100.0,
+        swing_index=1,
+    )
+
+    context.swings.extend([
+        Swing(
+            index=1,
+            time=pd.Timestamp("2026-01-01"),
+            price=100.0,
+            is_high=False,
+        ),
+        Swing(
+            index=2,
+            time=pd.Timestamp("2026-01-02"),
+            price=90.0,
+            is_high=False,
+        ),
+    ])
+
+    engine = MarketStructureEngine()
+    events = []
+
+    engine.update(context, events)
+
+    assert structure.bos_count == 1
+    assert any(
+        event.type == StructureEventType.BEARISH_BOS
+        for event in events
+    )
+
+    # سطح بعدی شکسته می‌شود.
+    structure.structural_low = StructureLevel(
+        price=90.0,
+        swing_index=2,
+    )
+
+    context.df.loc[context.df.index[-1], "open"] = 85.0
+    context.df.loc[context.df.index[-1], "close"] = 79.0
+    context.df.loc[context.df.index[-1], "high"] = 86.0
+    context.df.loc[context.df.index[-1], "low"] = 78.0
+
+    events = []
+    engine.update(context, events)
+
+    assert structure.bos_count == 2
+    assert any(
+        event.type == StructureEventType.BEARISH_BOS
+        for event in events
+    )
+
+def test_bullish_bos_updates_protected_low_to_latest_swing():
+    context = make_context(
+        bias=MarketBias.BULLISH,
+        level_price=100.0,
+        candle_open=100.0,
+        candle_close=102.0,
+    )
+
+    context.swings.extend([
+        Swing(
+            index=1,
+            time=pd.Timestamp("2026-01-02"),
+            price=97.0,
+            is_high=False,
+        ),
+        Swing(
+            index=2,
+            time=pd.Timestamp("2026-01-02 12:00"),
+            price=98.0,
+            is_high=False,
+        ),
+    ])
+
+    engine = MarketStructureEngine()
+    engine.update(context, [])
+
+    structure = context.market_structure
+
+    assert structure.bos_count == 1
+    assert structure.protected_low.price == 98.0
+    assert structure.protected_low.swing_index == 2
+
+
+def test_bearish_bos_updates_protected_high_to_latest_swing():
+    context = make_context(
+        bias=MarketBias.BEARISH,
+        level_price=100.0,
+        candle_open=100.0,
+        candle_close=98.0,
+        candle_high=101.0,
+        candle_low=97.0,
+    )
+
+    context.swings.extend([
+        Swing(
+            index=1,
+            time=pd.Timestamp("2026-01-02"),
+            price=103.0,
+            is_high=True,
+        ),
+        Swing(
+            index=2,
+            time=pd.Timestamp("2026-01-02 12:00"),
+            price=102.0,
+            is_high=True,
+        ),
+    ])
+
+    engine = MarketStructureEngine()
+    engine.update(context, [])
+
+    structure = context.market_structure
+
+    assert structure.bos_count == 1
+    assert structure.protected_high.price == 102.0
+    assert structure.protected_high.swing_index == 2
+
+
+def test_bearish_choch_clears_old_protected_low():
+    context = make_context(
+        bias=MarketBias.BULLISH,
+        candle_open=102.0,
+        candle_close=98.0,
+    )
+
+    structure = context.market_structure
+    structure.protected_low = StructureLevel(
+        price=100.0,
+        swing_index=1,
+    )
+    context.swings.append(
+        Swing(
+            index=1,
+            time=pd.Timestamp("2026-01-02"),
+            price=100.0,
+            is_high=False,
+        )
+    )
+
+    MarketStructureEngine().update(context, [])
+
+    assert structure.bias == MarketBias.BEARISH
+    assert structure.protected_low.price is None
+    assert structure.protected_low.swing_index is None
+
+
+def test_bullish_choch_clears_old_protected_high():
+    context = make_context(
+        bias=MarketBias.BEARISH,
+        candle_open=98.0,
+        candle_close=102.0,
+    )
+
+    structure = context.market_structure
+    structure.protected_high = StructureLevel(
+        price=100.0,
+        swing_index=1,
+    )
+    context.swings.append(
+        Swing(
+            index=1,
+            time=pd.Timestamp("2026-01-02"),
+            price=100.0,
+            is_high=True,
+        )
+    )
+
+    MarketStructureEngine().update(context, [])
+
+    assert structure.bias == MarketBias.BULLISH
+    assert structure.protected_high.price is None
+    assert structure.protected_high.swing_index is None
+
+
+def test_bearish_choch_then_bos_restores_protected_high():
+    context = make_context(
+        bias=MarketBias.BULLISH,
+        candle_open=102.0,
+        candle_close=98.0,
+        candle_high=103.0,
+        candle_low=97.0,
+    )
+
+    structure = context.market_structure
+    structure.protected_low = StructureLevel(
+        price=100.0,
+        swing_index=1,
+    )
+
+    context.swings.append(
+        Swing(
+            index=1,
+            time=pd.Timestamp("2026-01-02"),
+            price=100.0,
+            is_high=False,
+        )
+    )
+
+    engine = MarketStructureEngine()
+    engine.update(context, [])
+
+    assert structure.bias == MarketBias.BEARISH
+    assert structure.protected_low.price is None
+
+    context.swings.extend([
+        Swing(
+            index=2,
+            time=pd.Timestamp("2026-01-04"),
+            price=99.0,
+            is_high=True,
+        ),
+        Swing(
+            index=3,
+            time=pd.Timestamp("2026-01-04 12:00"),
+            price=95.0,
+            is_high=False,
+        ),
+    ])
+
+    context.df.loc[context.df.index[-1], "time"] = pd.Timestamp(
+        "2026-01-05"
+    )
+    context.df.loc[context.df.index[-1], "open"] = 94.0
+    context.df.loc[context.df.index[-1], "high"] = 94.5
+    context.df.loc[context.df.index[-1], "low"] = 92.0
+    context.df.loc[context.df.index[-1], "close"] = 93.0
+
+    events = []
+    engine.update(context, events)
+
+    assert structure.bos_count == 1
+    assert structure.protected_high.price == 99.0
+    assert structure.protected_high.swing_index == 2
+
+
+def test_bullish_choch_then_bos_restores_protected_low():
+    context = make_context(
+        bias=MarketBias.BEARISH,
+        candle_open=98.0,
+        candle_close=102.0,
+        candle_high=103.0,
+        candle_low=97.0,
+    )
+
+    structure = context.market_structure
+    structure.protected_high = StructureLevel(
+        price=100.0,
+        swing_index=1,
+    )
+
+    context.swings.append(
+        Swing(
+            index=1,
+            time=pd.Timestamp("2026-01-02"),
+            price=100.0,
+            is_high=True,
+        )
+    )
+
+    engine = MarketStructureEngine()
+    engine.update(context, [])
+
+    assert structure.bias == MarketBias.BULLISH
+    assert structure.protected_high.price is None
+
+    context.swings.extend([
+        Swing(
+            index=2,
+            time=pd.Timestamp("2026-01-04"),
+            price=101.0,
+            is_high=False,
+        ),
+        Swing(
+            index=3,
+            time=pd.Timestamp("2026-01-04 12:00"),
+            price=105.0,
+            is_high=True,
+        ),
+    ])
+
+    context.df.loc[context.df.index[-1], "time"] = pd.Timestamp(
+        "2026-01-05"
+    )
+    context.df.loc[context.df.index[-1], "open"] = 106.0
+    context.df.loc[context.df.index[-1], "high"] = 108.0
+    context.df.loc[context.df.index[-1], "low"] = 105.5
+    context.df.loc[context.df.index[-1], "close"] = 107.0
+
+    events = []
+    engine.update(context, events)
+
+    assert structure.bos_count == 1
+    assert structure.protected_low.price == 101.0
+    assert structure.protected_low.swing_index == 2

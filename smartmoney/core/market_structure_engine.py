@@ -372,33 +372,44 @@ class MarketStructureEngine:
     ) -> None:
         structure = context.market_structure
         level = structure.structural_high
-        if level.price is None:
+
+        if level.price is None or level.swing_index is None:
             return
-        if level.swing_index is None:
-            return
+
         swing = self._get_swing_by_index(
             context,
             level.swing_index,
         )
 
-        if swing is None:
+        if swing is None or swing.is_broken:
             return
 
-        if swing.is_broken:
-            return
-
-        if not self._is_bullish_displacement(
-            context,
-        ):
+        if not self._is_bullish_displacement(context):
             return
 
         current_close = context.df.iloc[-1]["close"]
+
         if current_close <= level.price:
             return
 
         swing.is_broken = True
 
+        protected_swing = self._find_latest_valid_swing(
+            context,
+            is_high=False,
+            after_time=structure.choch_time
+            if structure.choch_time is not None
+            else swing.time,
+        )
+
+        if protected_swing is not None:
+            structure.protected_low = StructureLevel(
+                price=protected_swing.price,
+                swing_index=protected_swing.index,
+            )
+
         structure.bos_count += 1
+
         events.append(
             StructureEvent(type=StructureEventType.BULLISH_BOS)
         )
@@ -431,7 +442,23 @@ class MarketStructureEngine:
             return
 
         swing.is_broken = True
+
+        protected_swing = self._find_latest_valid_swing(
+            context,
+            is_high=True,
+            after_time=structure.choch_time
+            if structure.choch_time is not None
+            else swing.time,
+        )
+
+        if protected_swing is not None:
+            structure.protected_high = StructureLevel(
+                price=protected_swing.price,
+                swing_index=protected_swing.index,
+            )
+
         structure.bos_count += 1
+
         events.append(
             StructureEvent(type=StructureEventType.BEARISH_BOS)
         )
@@ -467,6 +494,7 @@ class MarketStructureEngine:
         structure.choch_count += 1
         structure.bias = MarketBias.BEARISH
         structure.choch_time = context.df.iloc[-1]["time"]
+        structure.protected_low = StructureLevel()
         structure.structural_low = StructureLevel()
         events.append(
             StructureEvent(
@@ -507,6 +535,7 @@ class MarketStructureEngine:
         structure.choch_count += 1
         structure.bias = MarketBias.BULLISH
         structure.choch_time = context.df.iloc[-1]["time"]
+        structure.protected_high = StructureLevel()
         structure.structural_high = StructureLevel()
         events.append(
             StructureEvent(
@@ -570,3 +599,28 @@ class MarketStructureEngine:
             return None
 
         return max(candidates, key=lambda swing: swing.time)
+    
+    def _find_latest_valid_swing(
+        self,
+        context: MarketContext,
+        *,
+        is_high: bool,
+        after_time,
+    ) -> Swing | None:
+        current_time = context.df.iloc[-1]["time"]
+
+        candidates = [
+            swing
+            for swing in context.swings
+            if swing.time > after_time
+            and swing.time <= current_time
+            and swing.is_high == is_high
+            and swing.is_valid
+            and not swing.is_broken
+        ]
+
+        if not candidates:
+            return None
+
+        return max(candidates, key=lambda swing: swing.time)
+
