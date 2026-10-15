@@ -150,15 +150,23 @@ Mark a stage complete only after code review and focused tests pass. Record comm
 
 ### Stage 1 — Repair and test structure events / market structure
 
-* **Status:** In progress.
-* **Completed:** Corrected bullish and bearish weakness pattern definitions in `StructureEventEngine`; added focused tests for bullish confirmation, bearish confirmation, both weakness patterns, and fewer than three relations. Implemented direction-aware bullish and bearish BOS detection in `MarketStructureEngine`. A detected BOS increments the corresponding counter and emits `BULLISH_BOS` or `BEARISH_BOS`. Added regression tests confirming that repeated processing of the same context does not emit the same BOS event or count it again.
-* **Validation:** `pytest -q tests/test_structure_event_engine.py` — 5 passed (earlier validation). `pytest -q tests/test_market_structure_engine.py` — 9 passed after BOS event and duplicate-processing tests. `pytest -q` — 262 passed after the BOS changes. `git diff --check` — clean.
-* **Implementation commit:** `ecaaf2f` — `Emit bullish and bearish BOS events`.
-* **Remaining:** Implement and test false-break handling, CHOCH/MSS transition behavior, and event metadata sufficient for reliable event-to-price/time association.
-* **Scope:** Correct weakness event patterns; implement and test direction-aware bullish and bearish BOS; define CHOCH/MSS transition behavior; emit event details sufficient to associate events with price levels and time.
-* **Acceptance:** Unit tests cover bullish and bearish cases, false breaks, transition behavior, and repeated processing without duplicate BOS counting. Event definitions must be explicit and consistent with ICT intent.
-
-
+- **Status:** In progress — BOS and core CHOCH handling implemented; remaining validation work outstanding.
+- **Completed:**
+  - Corrected bullish and bearish weakness pattern definitions in `StructureEventEngine` and added focused tests.
+  - Implemented direction-aware bullish and bearish BOS detection, counters, and event emission.
+  - Implemented bullish and bearish CHOCH detection using protected structure levels.
+  - Clear the stale structural low after bearish CHOCH and the stale structural high after bullish CHOCH.
+  - Record the CHOCH timestamp in `MarketStructure.choch_time`.
+  - Restore the relevant structural level from the latest valid, unbroken swing formed after CHOCH.
+  - Added regression coverage for stale structural levels, duplicate BOS/CHOCH events, swing selection after CHOCH, and the CHOCH → new swing → BOS sequence.
+- **Validation:** `pytest tests/test_market_structure_engine.py -q` — 17 passed; `pytest -q` — 270 passed; `git diff --check` — clean.
+- **Latest implementation commit:** `9b20074` — `Improve market structure recovery after CHOCH`.
+- **Remaining:**
+  - Review and validate protected-high/protected-low lifecycle and updates after BOS and CHOCH.
+  - Review false-break handling and transition behavior.
+  - Verify structure-event metadata and reliable event-to-price/time association.
+- **Scope:** Maintain direction-aware BOS/CHOCH behavior, validate protected levels and transitions, and ensure events are associated with the correct price levels and timestamps.
+- **Acceptance:** Focused bullish and bearish tests cover BOS, CHOCH, protected levels, false breaks, transitions, stale-level invalidation, post-CHOCH structure recovery, and duplicate processing. The full test suite passes.
 
 ### Stage 2 — Feature model and evidence links
 - **Status:** Not started.
