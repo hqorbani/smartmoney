@@ -1,210 +1,286 @@
-# ICT / Smart Money Scoring Roadmap
+# Scoring Roadmap
 
-> Living implementation record. Update this document at every scoring-development stage. Update README after implementation and validation, so it describes verified behavior rather than intentions.
+## Purpose
 
-## Purpose and scope
+Define a staged implementation plan for a reliable, explainable, and testable signal scoring system.
 
-Build a score grounded in Smart Money / ICT concepts. It must rank and prioritize signals as well as support configurable filtering. Do not add unrelated signal factors such as RSI, MACD, moving averages, generic candle patterns/counts, or classic volume. ATR may be used for risk management, not as an independent setup-quality signal.
+Scoring must prioritize signal quality without changing the underlying trade-entry rules unintentionally. Each stage should be validated before proceeding to the next stage.
 
-Preserve the configured M3/M5 timeframes. Do not change timeframe configuration as part of scoring work.
+## Baseline and Current State
 
-## Agreed scoring model (proposed weights)
+- Repository: `hqorbani/smartmoney`
+- Branch: `main`
+- Baseline reference: `feb39ec`
+- The main branch has since received improvements to score calculation, market-structure handling, score logging, ranking, and entry filtering.
+- Review the current `main` branch before beginning each implementation stage.
 
-These weights are the initial proposal, not a claim that every feature is implemented. Confirm each feature's definition and available data before adding a rule. Avoid double-counting the same evidence.
+### Current Scoring Components
 
-### 1. Market structure — highest priority
+The scoring system currently includes these rules:
 
-| Feature | Proposed points | Notes |
-|---|---:|---|
-| Valid BOS in trade direction | +3 | Explicit, direction-aware event |
-| CHOCH/MSS in trade direction | +3 | Must be explicitly detected |
-| OB originating from BOS | +2 | Requires reliable OB-to-event link |
-| OB aligned with HTF structure | +2 | Requires defined HTF context |
+- `OBActiveFVGScore`
+- `MarketStructureAlignmentScore`
+- `OrderBlockEntryReadinessScore`
 
-### 2. Order Block quality
+The configured rule weights are currently:
 
-| Feature | Proposed points | Notes |
-|---|---:|---|
-| OB caused BOS | +3 | Prevent duplicate counting with structure relation |
-| OB with FVG | +2 | Prefer validated direct relationship |
-| Fresh / unmitigated OB | +2 | Use lifecycle state |
-| First retest | +2 | Requires reliable retest/attempt history |
-| OB after strong displacement | +2 | Requires measurable displacement definition |
-| OB aligned with HTF structure | +2 | Avoid duplicate counting with structure alignment |
-| Repeated tests | -1 to -2 | Define thresholds from observed test count |
+- `OB_ACTIVE_FVG_SCORE = 2.0`
+- `MARKET_STRUCTURE_ALIGNMENT_SCORE = 2.0`
+- `ORDER_BLOCK_ENTRY_READINESS_SCORE = 2.0`
 
-### 3. Fair Value Gap quality
+`ScoreEngine` calculates the total score and records a per-rule score breakdown on the signal.
 
-| Feature | Proposed points | Notes |
-|---|---:|---|
-| FVG from strong displacement | +2 | Requires measurable displacement |
-| FVG associated with BOS | +3 | Requires explicit event association |
-| FVG inside / connected to OB | +2 | Do not count the same OB-FVG relationship twice |
-| Fresh / unmitigated FVG | +2 | Use lifecycle state |
-| Aligned with market structure | +2 | Direction-aware |
-| Filled repeatedly | -2 | Requires repeat mitigation/fill history |
-| Very small / weak FVG | -1 | Define a scale-aware threshold |
+The scheduler logs signal scores, including their breakdown, for diagnostic purposes.
 
-Illustrative calibration: ordinary FVG around 2; FVG + BOS around 5; FVG + BOS + OB around 7+. These are examples, not guaranteed outputs.
+These components are implemented, but their effectiveness as predictors of trade quality has not yet been established through systematic validation.
 
-### 4. Premium / Discount
+---
 
-| Feature | Proposed points |
-|---|---:|
-| Buy in Discount / Sell in Premium | +2 |
-| Mid-range | 0 |
-| Buy in Premium / Sell in Discount | -2 |
+## Stage 1 — Market Structure
 
-Requires a defined dealing range and source swings.
+**Status: In progress**
 
-### 5. Liquidity
+### Goals
 
-| Feature | Proposed points |
-|---|---:|
-| Liquidity sweep before setup | +3 |
-| Sweep followed by MSS/BOS | +3 |
-| Clear liquidity target in trade direction | +2 |
-| No liquidity event | 0 |
-| Trading directly into opposing liquidity | -2 |
+Establish reliable market-structure information before using it as a scoring input.
 
-Example to support: sell-side sweep → bullish MSS → bullish OB/FVG → BUY. Requires explicit liquidity detection and event sequencing.
+### Scope
 
-### 6. Entry confirmation
+- Validate swing identification and lifecycle.
+- Validate bullish and bearish BOS detection.
+- Validate bullish and bearish CHOCH detection.
+- Validate protected highs and lows.
+- Verify that structure bias transitions correctly between bullish, bearish, transition, and unknown states.
+- Verify that BOS and CHOCH can be enabled and disabled independently.
+- Ensure repeated scheduler cycles do not generate unintended duplicate structure events.
 
-Keep this separate from setup quality.
+### Acceptance Criteria
 
-| Feature | Proposed points |
-|---|---:|
-| Valid rejection after price enters zone | +1 |
-| Displacement away from zone | +2 |
-| Micro BOS/MSS | +3 |
-| New FVG in trade direction | +2 |
-| Invalid confirmation | -2 |
+- Unit tests cover bullish and bearish structure scenarios.
+- BOS and CHOCH behavior is deterministic for equivalent inputs.
+- Protected structure levels are updated consistently.
+- Unknown or transitional structure does not incorrectly award directional-alignment points.
+- Existing behavior is preserved where no intentional change is specified.
 
-**Final Score = Setup Score + Entry Confirmation Score.** Zone proximity/readiness alone is not price-action confirmation; keep those concepts distinct.
+### Remaining Work
 
-### 7. Multi-timeframe alignment (later stage)
+- Review edge cases involving consecutive breaks, invalidated swings, and transitions following CHOCH.
+- Validate behavior against representative market data, not only synthetic unit-test data.
 
-| Feature | Proposed points |
-|---|---:|
-| HTF and LTF aligned | +3 |
-| HTF conflicts with LTF direction | -2 |
+---
 
-Defer until HTF context and direction semantics are explicit and tested.
+## Stage 2 — Feature Model
 
-## Repository audit — baseline
+**Status: Not started**
 
-Reviewed the main branch at baseline commit `feb39ec`. Verify current HEAD before each implementation stage.
+### Goals
 
-### Existing scoring rules
+Provide consistent, explicit market features to the scoring rules.
 
-| Component | Current behavior |
-|---|---|
-| `smartmoney/scoring/fvg.py` — `ActiveFVGScore` | Returns 1 for an `ACTIVE_FVG` strategy, except when both OB and FVG exist because that pair is handled by the OB rule |
-| `smartmoney/scoring/orderblock.py` — `OrderBlockScore` | Returns configured 2 points when signal has an OB and FVG, the OB's `related_fvg` is the same FVG object, and the FVG is ACTIVE |
-| `smartmoney/scoring/market_structure.py` — `MarketStructureAlignmentScore` | Returns configured 2 points when current market bias matches BUY/SELL; UNKNOWN and TRANSITION score 0 |
-| `smartmoney/scoring/orderblock_entry_readiness.py` — `OrderBlockEntryReadinessScore` | Returns configured 2 points when the OB is ACTIVE, an ENTRY zone exists, current ask/bid is inside it, and the first or second attempt is available |
-| `smartmoney/scoring/engine.py` — `ScoreEngine` | Sums discovered rules and rounds the total to 2 decimal places |
+### Scope
 
-Relevant configuration in `smartmoney/config.py`: `OB_ACTIVE_FVG_SCORE = 2.0`, `MARKET_STRUCTURE_ALIGNMENT_SCORE = 2.0`, `ORDER_BLOCK_ENTRY_READINESS_SCORE = 2.0`, `MINIMUM_SCORE = 0.0`, `SORT_BY = "distance"`.
+- Define how order blocks (OBs) are represented and validated.
+- Define the relationship between OBs and fair value gaps (FVGs).
+- Define displacement requirements and how they relate to structure events.
+- Track relevant retests and entry-zone state.
+- Ensure feature values are derived from available historical data without look-ahead bias.
+- Handle missing or invalid market data safely.
 
-### Data already available
+### Acceptance Criteria
 
-- `MarketStructure`: bias, BOS/CHOCH counters, protected and structural highs/lows.
-- `StructureEventType`: confirmed bullish/bearish events, weakness events, and enum values for BOS/CHOCH/BULLISH_BOS/BEARISH_BOS.
-- `OrderBlock`: direction, candle OHLC/time/index, expanded zone, related FVG, mitigation fields, lifecycle status, first/second attempt status.
-- `FVG`: direction, boundaries, start/end index/time, ACTIVE/MITIGATED/FILLED status, first mitigation and fill fields.
-- `MarketContext`: candles, swings, swing relations, structures, FVGs, OBs, market structure, and current bid/ask.
-- `QueryEngine` already supports minimum-score filtering and sorting by score.
+- Feature definitions are explicit and documented.
+- Feature calculations are independently testable.
+- Missing data does not produce misleading positive scores.
+- Historical calculations do not use future candles.
+- Feature state remains consistent across scheduler cycles.
 
-### Gaps and correctness risks confirmed in the inspected code
+---
 
-* Bullish and bearish BOS detection, counting, and `BULLISH_BOS` / `BEARISH_BOS` event emission are implemented and covered by tests. False-break handling and CHOCH/MSS transition behavior remain outstanding.
+## Stage 3 — Setup Score
 
-* The bullish displacement check is only `close > open`; this is not a robust displacement-strength measure.
+**Status: Not started**
 
-* `MarketStructureEngine._handle_transition()` is a placeholder; CHOCH/MSS processing is not implemented there.
+### Goals
 
-* `StructureEventEngine` currently defines bullish weakness with the same HH-HL-HH pattern used for bullish confirmation; bearish weakness also uses that bullish pattern. These definitions are not reliable evidence for scoring and must be corrected and tested.
+Measure the quality of a potential trading setup independently of immediate entry timing.
 
-* BOS events are emitted with their direction, but reliable event metadata and explicit event-to-price/time association still need to be verified and completed.
+### Scope
 
-* OB has mitigation state but no independent retest count. Do not infer repeated retests from a boolean alone.
+- Score the quality and validity of the order block.
+- Score the relationship between the order block and relevant FVGs.
+- Incorporate validated market-structure context.
+- Define scoring weights and normalization rules.
+- Avoid double-counting correlated features.
 
-* FVG stores first mitigation/fill metadata, not complete repeated-fill history.
+### Acceptance Criteria
 
-* No verified dedicated liquidity-sweep or Premium/Discount engine was identified in the reviewed models/context.
+- Each rule has a clear definition and bounded, predictable output.
+- Individual rule contributions are visible in the score breakdown.
+- Invalid or incomplete setups cannot receive unjustifiably high scores.
+- Unit tests cover positive, negative, boundary, and missing-data cases.
+- Total scores are reproducible for equivalent inputs.
 
-* Scheduler currently queries with `minimum_score=0.0` and `sort_by="distance"`. Scores are calculated, but current configuration does not prioritize by score or reject candidates using a meaningful score threshold.
+---
 
-* Entry readiness means price is in the zone and an attempt is available; it does not prove rejection, displacement, or micro-structure confirmation.
+## Stage 4 — Entry Confirmation Score
 
-## Implementation stages and completion log
+**Status: Not started**
 
-Mark a stage complete only after code review and focused tests pass. Record commit SHA(s), test commands/results, and deviations.
+### Goals
 
-### Stage 0 — Baseline audit
-- **Status:** Complete (initial audit; revisit if implementation uncovers more dependencies).
-- **Result:** Existing models support basic bias alignment, active OB/FVG association, lifecycle state, and entry-zone readiness. Structure-event correctness and several ICT features need development.
-- **Baseline:** `feb39ec` (verify HEAD before starting changes).
+Evaluate entry readiness separately from setup quality.
 
-### Stage 1 — Repair and test structure events / market structure
+### Scope
 
-- **Status:** In progress — BOS and core CHOCH handling implemented; remaining validation work outstanding.
-- **Completed:**
-  - Corrected bullish and bearish weakness pattern definitions in `StructureEventEngine` and added focused tests.
-  - Implemented direction-aware bullish and bearish BOS detection, counters, and event emission.
-  - Implemented bullish and bearish CHOCH detection using protected structure levels.
-  - Clear the stale structural low after bearish CHOCH and the stale structural high after bullish CHOCH.
-  - Record the CHOCH timestamp in `MarketStructure.choch_time`.
-  - Restore the relevant structural level from the latest valid, unbroken swing formed after CHOCH.
-  - Added regression coverage for stale structural levels, duplicate BOS/CHOCH events, swing selection after CHOCH, and the CHOCH → new swing → BOS sequence.
-- **Validation:** `pytest tests/test_market_structure_engine.py -q` — 17 passed; `pytest -q` — 270 passed; `git diff --check` — clean.
-- **Latest implementation commit:** `9b20074` — `Improve market structure recovery after CHOCH`.
-- **Remaining:**
-  - Review and validate protected-high/protected-low lifecycle and updates after BOS and CHOCH.
-  - Review false-break handling and transition behavior.
-  - Verify structure-event metadata and reliable event-to-price/time association.
-- **Scope:** Maintain direction-aware BOS/CHOCH behavior, validate protected levels and transitions, and ensure events are associated with the correct price levels and timestamps.
-- **Acceptance:** Focused bullish and bearish tests cover BOS, CHOCH, protected levels, false breaks, transitions, stale-level invalidation, post-CHOCH structure recovery, and duplicate processing. The full test suite passes.
+- Evaluate whether the current price is within the eligible entry zone.
+- Evaluate the order block's entry-attempt state.
+- Incorporate validated entry-confirmation features.
+- Keep setup quality distinct from entry timing.
+- Ensure scoring does not bypass existing trade-entry requirements.
 
-### Stage 2 — Feature model and evidence links
-- **Status:** Not started.
-- **Scope:** Add explicit OB/FVG-to-structure-event links; define measurable displacement; model retest count/history and lifecycle evidence without inferring unrecorded data.
-- **Acceptance:** Feature provenance is testable; repeated scans do not inflate counts; no duplicate scoring for the same evidence.
+### Acceptance Criteria
 
-### Stage 3 — Setup score
-- **Status:** Not started.
-- **Scope:** Add supported market-structure, OB, FVG, Premium/Discount, and liquidity rules in small increments, prioritizing features with reliable source data.
-- **Acceptance:** Each rule has focused positive, negative, neutral, missing-data, and direction-mismatch tests; scoring avoids double-counting.
+- Entry readiness is evaluated using current, valid market data.
+- Signals outside the eligible entry zone do not receive entry-readiness credit.
+- Existing entry-attempt and execution rules remain authoritative.
+- Unit tests cover initial entry, subsequent attempts, and unavailable entry zones.
+- Scoring remains diagnostic unless an explicit, tested filtering policy is approved.
 
-### Stage 4 — Entry confirmation score
-- **Status:** Not started.
-- **Scope:** Separate actual rejection/displacement/micro-BOS/new-FVG confirmations from mere zone readiness.
-- **Acceptance:** Final score equals setup score plus entry-confirmation score; tests verify confirmation is only credited after price enters the relevant zone.
+---
 
-### Stage 5 — Ranking and filtering
-- **Status:** Not started.
-- **Scope:** Make score-based ranking configurable and establish a configurable minimum score once score semantics are stable. Keep distance optional rather than accidentally primary.
-- **Acceptance:** Tests prove ordering, threshold filtering, tie handling, and sensible behavior when optional features are unavailable.
+## Stage 5 — Ranking and Filtering
 
-### Stage 6 — Multi-timeframe alignment
-- **Status:** Deferred.
-- **Scope:** Introduce explicit HTF structure context and tested alignment/conflict scoring.
-- **Acceptance:** Tests cover aligned, conflicting, and unknown HTF/LTF cases; no timeframe configuration changes are bundled into this work.
+**Status: In progress**
 
-### Stage 7 — Validation and documentation
-- **Status:** Not started.
-- **Scope:** Run the full test suite and relevant historical/backtest analysis; compare score ranks with outcomes; tune weights only from documented evidence. Then update README to describe implemented scoring and link to this roadmap.
-- **Acceptance:** Full test results and known limitations are recorded; README describes only behavior that exists and has been verified.
+### Implemented
 
-## Working rules
+The current implementation includes:
 
-1. Before a stage, inspect the current branch and relevant code; do not assume this baseline is still HEAD.
-2. Implement one coherent stage at a time with focused regression tests.
-3. Update this file in the same change/commit as each stage's implementation, including status, findings, test results, and commit SHA when available.
-4. Never mark a feature as implemented merely because a model field or enum exists.
-5. Avoid duplicate points for one event or relationship.
-6. Keep the strategy ICT/SMC-grounded; do not introduce unrelated indicators as scoring factors.
-7. Do not change configured timeframes as part of this roadmap.
-8. Update README after scoring is implemented and validated, summarizing current behavior and linking here for detailed progress.
+- Configurable minimum-score filtering through `Config.MINIMUM_SCORE`.
+- Configurable sorting through `Config.SORT_BY`.
+- Configurable sort direction through `Config.SORT_DESCENDING`.
+- Configurable result limits through `Config.TOP_SIGNALS`.
+- Score-based sorting in `QueryEngine`.
+- Per-rule score breakdowns in `ScoreEngine`.
+- Scheduler integration with the query configuration.
+- Signal-score logging for diagnostics.
+
+Relevant configuration currently includes:
+
+- `SORT_BY = "score"`
+- `SORT_DESCENDING = True`
+- `TOP_SIGNALS = 5`
+- `MINIMUM_SCORE = 0.0`
+
+The current minimum-score setting is permissive and should not be treated as a validated quality threshold.
+
+### Remaining Work
+
+- Add or verify dedicated `QueryEngine` tests for score ordering.
+- Test minimum-score filtering, including boundary values.
+- Test deterministic behavior for equal scores.
+- Verify behavior when optional scoring features are unavailable.
+- Confirm that displayed and exported signals follow the configured ranking and limit.
+- Analyze score distributions before selecting a meaningful minimum-score threshold.
+- Validate whether higher-scoring signals actually correspond to better outcomes.
+
+### Acceptance Criteria
+
+- Sorting and filtering behave deterministically.
+- The configured result limit is respected.
+- Score thresholds are documented and tested.
+- Ranking changes do not unintentionally alter execution safety rules.
+- Thresholds are calibrated using historical or forward-test evidence rather than intuition alone.
+
+---
+
+## Stage 6 — Multi-Timeframe Alignment
+
+**Status: Deferred**
+
+### Goals
+
+Incorporate higher-timeframe context without introducing look-ahead bias or inconsistent feature state.
+
+### Scope
+
+- Define the relationship between entry and higher timeframes.
+- Evaluate directional alignment across timeframes.
+- Define behavior when timeframes disagree.
+- Avoid using incomplete higher-timeframe candles where doing so would introduce unstable or future-dependent information.
+- Keep timeframe configuration separate from scoring implementation.
+
+### Acceptance Criteria
+
+- Timeframe alignment is independently testable.
+- Missing or conflicting higher-timeframe data is handled explicitly.
+- Historical evaluation uses only information available at the decision time.
+- The feature can be enabled or disabled without breaking existing scoring behavior.
+
+---
+
+## Stage 7 — Validation and Documentation
+
+**Status: Not started**
+
+### Goals
+
+Validate that the scoring system is reliable, explainable, and useful in practice.
+
+### Scope
+
+- Add missing unit and integration tests.
+- Run the complete relevant test suite.
+- Validate scoring against historical market data.
+- Compare score bands with observed trade outcomes.
+- Measure false positives and missed opportunities.
+- Evaluate the effect of thresholds and weights.
+- Document scoring rules, configuration, and known limitations.
+
+### Acceptance Criteria
+
+- Relevant unit and integration tests pass.
+- Score breakdowns can explain why a signal received its score.
+- Historical evaluation avoids look-ahead bias.
+- Changes to weights or thresholds have measurable, documented effects.
+- Performance claims are supported by data rather than by the score values alone.
+
+---
+
+## Operational Constraints
+
+- Do not change trade-entry logic unintentionally while implementing scoring.
+- Do not treat a high score as a guarantee of a profitable trade.
+- Do not use future candle information in scoring or validation.
+- Keep scoring rules independently testable.
+- Preserve explicit reasons for rejected or filtered signals where practical.
+- Keep diagnostic logging separate from console presentation.
+- Do not mark a stage complete solely because its code has been merged; verify its acceptance criteria.
+
+## Configuration Notes
+
+The current `main` branch enables M1 in `Config.TIMEFRAMES`; M3 and M5 are commented out.
+
+This configuration differs from any previous assumption that M1, M3, and M5 are enabled. Do not change timeframe settings as part of scoring work without a separate, explicit decision.
+
+Current scoring weights and ranking settings are implementation defaults, not empirically validated optimal values.
+
+## Recommended Next Steps
+
+1. Complete Stage 1 validation using representative market data.
+2. Add missing tests for Stage 5 ranking and filtering.
+3. Define and document the Stage 2 feature model.
+4. Implement and validate setup scoring before introducing additional entry-confirmation scoring.
+5. Evaluate score distributions and trade outcomes before tightening minimum-score thresholds.
+6. Proceed to multi-timeframe scoring only after the single-timeframe model is stable.
+
+## Status Policy
+
+Use the following meanings consistently:
+
+- **Not started:** Implementation work has not begun.
+- **In progress:** Some implementation exists, but acceptance criteria are not fully satisfied.
+- **Deferred:** Intentionally postponed until prerequisite work is complete.
+- **Complete:** Acceptance criteria have been met and verified.
+
+A merged implementation does not automatically qualify a stage as complete.
