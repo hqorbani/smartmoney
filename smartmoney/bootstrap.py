@@ -269,3 +269,26 @@ def create_market_structure_engine() -> MarketStructureEngine:
 def create_structure_event_engine() -> StructureEventEngine:
 
     return StructureEventEngine()
+
+
+def create_analysis_scheduler() -> Scheduler:
+    provider = create_provider()
+
+    return Scheduler(
+        provider=provider,
+        context_manager=create_context_manager(),
+        analyzer_engine=_create_analyzer_engine(),
+        scanner_engine=_create_scanner_engine(),
+        output_engine=_create_output_engine(include_csv=True),
+        score_engine=_create_score_engine(),
+        market_structure_engine=create_market_structure_engine(),
+        structure_event_engine=create_structure_event_engine(),
+        repository=SignalRepository(),
+        query_engine=QueryEngine(),
+        distance_service=DistanceService(),
+        symbols=Config.SYMBOLS,
+        timeframes=Config.TIMEFRAMES,
+        candle_count=Config.HISTORY_BARS,
+        interval=Config.SCAN_INTERVAL,
+        executor=None,
+    )

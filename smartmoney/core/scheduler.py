@@ -273,6 +273,17 @@ class Scheduler:
                         context,
                     )
 
+                    self.logger.info(
+                        "SIGNAL SCORE | symbol=%s | strategy=%s | direction=%s | "
+                        "signal_id=%s | breakdown=%s | total=%s",
+                        signal.symbol,
+                        signal.strategy,
+                        signal.direction,
+                        getattr(signal, "signal_id", None),
+                        getattr(signal, "score_breakdown", {}),
+                        signal.score,
+                    )
+
                     current_price = self.provider.get_current_price(
                         signal.symbol,
                     )
