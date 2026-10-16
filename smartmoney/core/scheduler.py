@@ -453,20 +453,30 @@ class Scheduler:
                     signal.symbol,
                     signal.timeframe,
                 )
-
-                if not StochasticFilter.is_entry_allowed(
+                allowed, k_value, d_value, reason = StochasticFilter.evaluate(
                     context.df if context is not None else None,
                     trade_plan.direction,
-                ):
+                )
+                self.logger.info(
+                    "STOCHASTIC STATUS | symbol=%s | timeframe=%s | "
+                    "direction=%s | K=%s | D=%s | "
+                    "oversold=%s | overbought=%s | "
+                    "allowed=%s | reason=%s",
+                    trade_plan.symbol,
+                    trade_plan.timeframe,
+                    trade_plan.direction.value,
+                    f"{k_value:.2f}" if k_value is not None else "N/A",
+                    f"{d_value:.2f}" if d_value is not None else "N/A",
+                    Config.STOCHASTIC_OVERSOLD,
+                    Config.STOCHASTIC_OVERBOUGHT,
+                    allowed,
+                    reason,
+                )
+
+                if not allowed:
                     execution_skipped += 1
-                    self.logger.info(
-                        "Entry skipped by Stochastic filter | "
-                        "symbol=%s | timeframe=%s | direction=%s",
-                        trade_plan.symbol,
-                        trade_plan.timeframe,
-                        trade_plan.direction.value,
-                    )
                     continue
+
 
                 if self._has_active_position(trade_plan.symbol):
                     self.logger.info(

@@ -8,11 +8,14 @@ LOG_DIR.mkdir(exist_ok=True)
 
 LOG_FILE = LOG_DIR / f"{datetime.now():%Y-%m-%d}.log"
 
+
 class SignalScoreConsoleFilter(logging.Filter):
-
     def filter(self, record: logging.LogRecord) -> bool:
-        return not record.getMessage().startswith("SIGNAL SCORE |")
-
+        message = record.getMessage()
+        return not (
+            message.startswith("SIGNAL SCORE |")
+            or message.startswith("STOCHASTIC STATUS |")
+        )
 
 def get_logger(name: str) -> logging.Logger:
 
