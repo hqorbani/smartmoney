@@ -8,6 +8,11 @@ LOG_DIR.mkdir(exist_ok=True)
 
 LOG_FILE = LOG_DIR / f"{datetime.now():%Y-%m-%d}.log"
 
+class SignalScoreConsoleFilter(logging.Filter):
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return not record.getMessage().startswith("SIGNAL SCORE |")
+
 
 def get_logger(name: str) -> logging.Logger:
 
@@ -30,7 +35,7 @@ def get_logger(name: str) -> logging.Logger:
 
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
-
+    console_handler.addFilter(SignalScoreConsoleFilter())
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
 
