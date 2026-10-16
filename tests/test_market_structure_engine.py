@@ -6,7 +6,7 @@ from smartmoney.models.market_structure import MarketBias
 from smartmoney.models.structure_event import StructureEvent, StructureEventType
 from smartmoney.models.structure_level import StructureLevel
 from smartmoney.models.swing import Swing
-
+from smartmoney.config import Config
 
 def make_context(
     *,
@@ -69,7 +69,8 @@ def make_context(
     return context
 
 
-def test_bullish_bos_increments_count_once():
+def test_bullish_bos_increments_count_once(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_BOS", True)
     context = make_context(
         bias=MarketBias.BULLISH,
         level_price=100.0,
@@ -83,7 +84,8 @@ def test_bullish_bos_increments_count_once():
     assert context.market_structure.bos_count == 1
 
 
-def test_bullish_bos_is_not_counted_twice():
+def test_bullish_bos_is_not_counted_twice(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_BOS", True)
     context = make_context(
         bias=MarketBias.BULLISH,
         level_price=100.0,
@@ -114,7 +116,8 @@ def test_bullish_bos_requires_close_above_level():
     assert context.market_structure.bos_count == 0
 
 
-def test_bearish_bos_increments_count_once():
+def test_bearish_bos_increments_count_once(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_BOS", True)
     context = make_context(
         bias=MarketBias.BEARISH,
         level_price=100.0,
@@ -146,7 +149,8 @@ def test_bearish_bos_is_not_counted_twice():
     engine.update(context, [])
 
 
-def test_bullish_bos_emits_event():
+def test_bullish_bos_emits_event(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_BOS", True)
     context = make_context(
         bias=MarketBias.BULLISH,
         level_price=100.0,
@@ -165,7 +169,8 @@ def test_bullish_bos_emits_event():
     )
 
 
-def test_bearish_bos_emits_event():
+def test_bearish_bos_emits_event(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_BOS", True)
     context = make_context(
         bias=MarketBias.BEARISH,
         level_price=100.0,
@@ -185,7 +190,8 @@ def test_bearish_bos_emits_event():
         for event in events
     )
 
-def test_bullish_bos_event_is_not_emitted_twice():
+def test_bullish_bos_event_is_not_emitted_twice(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_BOS", True)
     context = make_context(
         bias=MarketBias.BULLISH,
         level_price=100.0,
@@ -208,7 +214,8 @@ def test_bullish_bos_event_is_not_emitted_twice():
     assert len(bullish_bos_events) == 1
 
 
-def test_bearish_bos_event_is_not_emitted_twice():
+def test_bearish_bos_event_is_not_emitted_twice(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_BOS", True)
     context = make_context(
         bias=MarketBias.BEARISH,
         level_price=100.0,
@@ -232,7 +239,8 @@ def test_bearish_bos_event_is_not_emitted_twice():
 
     assert len(bearish_bos_events) == 1
 
-def test_bearish_choch_breaks_protected_low_once():
+def test_bearish_choch_breaks_protected_low_once(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_CHOCH", True)
     context = make_context(
         bias=MarketBias.BULLISH,
         candle_open=102.0,
@@ -269,7 +277,8 @@ def test_bearish_choch_breaks_protected_low_once():
     ) == 1
 
 
-def test_bullish_choch_breaks_protected_high_once():
+def test_bullish_choch_breaks_protected_high_once(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_CHOCH", True)
     context = make_context(
         bias=MarketBias.BEARISH,
         candle_open=98.0,
@@ -376,7 +385,8 @@ def test_bullish_choch_is_not_emitted_below_protected_high():
         for event in events
     )
 
-def test_bearish_choch_does_not_emit_bearish_bos_on_same_update():
+def test_bearish_choch_does_not_emit_bearish_bos_on_same_update(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_CHOCH", True)
     context = make_context(
         bias=MarketBias.BULLISH,
         candle_open=102.0,
@@ -415,7 +425,8 @@ def test_bearish_choch_does_not_emit_bearish_bos_on_same_update():
     )
 
 
-def test_bearish_choch_does_not_use_stale_structural_low_for_bos():
+def test_bearish_choch_does_not_use_stale_structural_low_for_bos(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_CHOCH", True)
     context = make_context(
         bias=MarketBias.BULLISH,
         candle_open=102.0,
@@ -513,7 +524,9 @@ def test_find_swing_after_choch_selects_latest_matching_swing():
     assert swing.price == 90.0
 
 
-def test_choch_rebuilds_structure_and_allows_bos():
+def test_choch_rebuilds_structure_and_allows_bos(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_BOS", True)
+    monkeypatch.setattr(Config, "ENABLE_CHOCH", True)
     context = make_context(
         bias=MarketBias.BULLISH,
         candle_open=102.0,
@@ -588,7 +601,8 @@ def test_choch_rebuilds_structure_and_allows_bos():
         for event in events
     )
 
-def test_bullish_bos_can_be_detected_on_two_distinct_levels():
+def test_bullish_bos_can_be_detected_on_two_distinct_levels(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_BOS", True)
     context = make_context(
         bias=MarketBias.BULLISH,
         candle_open=105.0,
@@ -650,7 +664,8 @@ def test_bullish_bos_can_be_detected_on_two_distinct_levels():
     )
 
 
-def test_bearish_bos_can_be_detected_on_two_distinct_levels():
+def test_bearish_bos_can_be_detected_on_two_distinct_levels(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_BOS", True)
     context = make_context(
         bias=MarketBias.BEARISH,
         candle_open=95.0,
@@ -711,7 +726,8 @@ def test_bearish_bos_can_be_detected_on_two_distinct_levels():
         for event in events
     )
 
-def test_bullish_bos_updates_protected_low_to_latest_swing():
+def test_bullish_bos_updates_protected_low_to_latest_swing(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_BOS", True)
     context = make_context(
         bias=MarketBias.BULLISH,
         level_price=100.0,
@@ -743,8 +759,8 @@ def test_bullish_bos_updates_protected_low_to_latest_swing():
     assert structure.protected_low.price == 98.0
     assert structure.protected_low.swing_index == 2
 
-
-def test_bearish_bos_updates_protected_high_to_latest_swing():
+def test_bearish_bos_updates_protected_high_to_latest_swing(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_BOS", True)
     context = make_context(
         bias=MarketBias.BEARISH,
         level_price=100.0,
@@ -778,8 +794,8 @@ def test_bearish_bos_updates_protected_high_to_latest_swing():
     assert structure.protected_high.price == 102.0
     assert structure.protected_high.swing_index == 2
 
-
-def test_bearish_choch_clears_old_protected_low():
+def test_bearish_choch_clears_old_protected_low(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_CHOCH", True)
     context = make_context(
         bias=MarketBias.BULLISH,
         candle_open=102.0,
@@ -806,8 +822,8 @@ def test_bearish_choch_clears_old_protected_low():
     assert structure.protected_low.price is None
     assert structure.protected_low.swing_index is None
 
-
-def test_bullish_choch_clears_old_protected_high():
+def test_bullish_choch_clears_old_protected_high(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_CHOCH", True)
     context = make_context(
         bias=MarketBias.BEARISH,
         candle_open=98.0,
@@ -834,8 +850,9 @@ def test_bullish_choch_clears_old_protected_high():
     assert structure.protected_high.price is None
     assert structure.protected_high.swing_index is None
 
-
-def test_bearish_choch_then_bos_restores_protected_high():
+def test_bearish_choch_then_bos_restores_protected_high(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_BOS", True)
+    monkeypatch.setattr(Config, "ENABLE_CHOCH", True)
     context = make_context(
         bias=MarketBias.BULLISH,
         candle_open=102.0,
@@ -895,8 +912,9 @@ def test_bearish_choch_then_bos_restores_protected_high():
     assert structure.protected_high.price == 99.0
     assert structure.protected_high.swing_index == 2
 
-
-def test_bullish_choch_then_bos_restores_protected_low():
+def test_bullish_choch_then_bos_restores_protected_low(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_BOS", True)
+    monkeypatch.setattr(Config, "ENABLE_CHOCH", True)
     context = make_context(
         bias=MarketBias.BEARISH,
         candle_open=98.0,
@@ -955,3 +973,111 @@ def test_bullish_choch_then_bos_restores_protected_low():
     assert structure.bos_count == 1
     assert structure.protected_low.price == 101.0
     assert structure.protected_low.swing_index == 2
+
+def test_bearish_choch_disabled_keeps_bullish_bias(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_CHOCH", False)
+
+    context = make_context(
+        bias=MarketBias.BULLISH,
+        candle_open=102.0,
+        candle_close=98.0,
+        candle_high=103.0,
+        candle_low=97.0,
+    )
+
+    context.market_structure.protected_low = StructureLevel(
+        price=100.0,
+        swing_index=1,
+    )
+    context.swings.append(
+        Swing(
+            index=1,
+            time=pd.Timestamp("2026-01-02"),
+            price=100.0,
+            is_high=False,
+        )
+    )
+
+    events = []
+    MarketStructureEngine().update(context, events)
+
+    assert context.market_structure.bias == MarketBias.BULLISH
+    assert context.market_structure.choch_count == 0
+    assert not any(
+        event.type == StructureEventType.BEARISH_CHOCH
+        for event in events
+    )
+
+def test_bullish_choch_disabled_keeps_bearish_bias(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_CHOCH", False)
+
+    context = make_context(
+        bias=MarketBias.BEARISH,
+        candle_open=98.0,
+        candle_close=102.0,
+        candle_high=103.0,
+        candle_low=97.0,
+    )
+
+    context.market_structure.protected_high = StructureLevel(
+        price=100.0,
+        swing_index=1,
+    )
+    context.swings.append(
+        Swing(
+            index=1,
+            time=pd.Timestamp("2026-01-02"),
+            price=100.0,
+            is_high=True,
+        )
+    )
+
+    events = []
+    MarketStructureEngine().update(context, events)
+
+    assert context.market_structure.bias == MarketBias.BEARISH
+    assert context.market_structure.choch_count == 0
+    assert not any(
+        event.type == StructureEventType.BULLISH_CHOCH
+        for event in events
+    )
+
+def test_bullish_bos_disabled_does_not_increment_count(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_BOS", False)
+
+    context = make_context(
+        bias=MarketBias.BULLISH,
+        level_price=100.0,
+        candle_open=100.0,
+        candle_close=102.0,
+    )
+
+    events = []
+    MarketStructureEngine().update(context, events)
+
+    assert context.market_structure.bos_count == 0
+    assert not any(
+        event.type == StructureEventType.BULLISH_BOS
+        for event in events
+    )
+
+def test_bearish_bos_disabled_does_not_increment_count(monkeypatch):
+    monkeypatch.setattr(Config, "ENABLE_BOS", False)
+
+    context = make_context(
+        bias=MarketBias.BEARISH,
+        level_price=100.0,
+        candle_open=100.0,
+        candle_close=98.0,
+        candle_high=101.0,
+        candle_low=97.0,
+    )
+
+    events = []
+    MarketStructureEngine().update(context, events)
+
+    assert context.market_structure.bos_count == 0
+    assert not any(
+        event.type == StructureEventType.BEARISH_BOS
+        for event in events
+    )

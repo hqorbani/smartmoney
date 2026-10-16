@@ -14,6 +14,7 @@ from smartmoney.models.swing_relation import (
 )
 
 from smartmoney.models.swing import Swing
+from smartmoney.config import Config
 
 class MarketStructureEngine:
     """
@@ -162,13 +163,14 @@ class MarketStructureEngine:
 
         structure = context.market_structure
 
-        if self._detect_bearish_choch(context, events):
+        if Config.ENABLE_CHOCH and self._detect_bearish_choch(context, events):
             return
 
-        for event in events:
-            if event.type == StructureEventType.BEARISH_WEAKNESS:
-                structure.bias = MarketBias.TRANSITION
-                return
+        if Config.ENABLE_CHOCH:
+            for event in events:
+                if event.type == StructureEventType.BEARISH_WEAKNESS:
+                    structure.bias = MarketBias.TRANSITION
+                    return
 
         if structure.structural_high.price is None:
             swing = self._find_swing_after_choch(
@@ -182,7 +184,8 @@ class MarketStructureEngine:
                     swing_index=swing.index,
                 )
 
-        self._detect_bullish_bos(context, events)
+        if Config.ENABLE_BOS:
+            self._detect_bullish_bos(context, events)
 
 
     # ==================================================
@@ -197,13 +200,14 @@ class MarketStructureEngine:
 
         structure = context.market_structure
 
-        if self._detect_bullish_choch(context, events):
+        if Config.ENABLE_CHOCH and self._detect_bullish_choch(context, events):
             return
 
-        for event in events:
-            if event.type == StructureEventType.BULLISH_WEAKNESS:
-                structure.bias = MarketBias.TRANSITION
-                return
+        if Config.ENABLE_CHOCH:
+            for event in events:
+                if event.type == StructureEventType.BULLISH_WEAKNESS:
+                    structure.bias = MarketBias.TRANSITION
+                    return
 
         if structure.structural_low.price is None:
             swing = self._find_swing_after_choch(
@@ -217,7 +221,8 @@ class MarketStructureEngine:
                     swing_index=swing.index,
                 )
 
-        self._detect_bearish_bos(context, events)
+        if Config.ENABLE_BOS:
+            self._detect_bearish_bos(context, events)
 
     # ==================================================
     # TRANSITION

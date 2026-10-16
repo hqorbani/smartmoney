@@ -65,7 +65,8 @@ class Config:
 
 
     STRUCTURE_BREAK_MODE = "close"
-    #-- close|wick
+    ENABLE_BOS = True
+    ENABLE_CHOCH = True
 
 
     # ----------------------------
