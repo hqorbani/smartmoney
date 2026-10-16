@@ -65,9 +65,21 @@ class Config:
 
 
     STRUCTURE_BREAK_MODE = "close"
+
     ENABLE_BOS = True
     ENABLE_CHOCH = True
 
+    # ----------------------------
+    # Stochastic Filter
+    # ----------------------------
+    ENABLE_STOCHASTIC_FILTER = True
+
+    STOCHASTIC_K_PERIOD = 14
+    STOCHASTIC_D_PERIOD = 3
+    STOCHASTIC_SLOWING = 3
+
+    STOCHASTIC_OVERSOLD = 20.0
+    STOCHASTIC_OVERBOUGHT = 80.0
 
     # ----------------------------
     # BackTest

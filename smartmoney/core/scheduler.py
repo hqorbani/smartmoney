@@ -26,7 +26,7 @@ from smartmoney.models.orderblock import (
     OrderBlockStatus,
 )
 from smartmoney.services.zone_entry_service import ZoneEntryService
-
+from smartmoney.services.stochastic_filter import StochasticFilter
 class Scheduler:
 
     def __init__(
@@ -448,6 +448,24 @@ class Scheduler:
 
                 if attempt_zone is None:
                     execution_skipped += 1
+                    continue
+                context = self.context_manager.get(
+                    signal.symbol,
+                    signal.timeframe,
+                )
+
+                if not StochasticFilter.is_entry_allowed(
+                    context.df if context is not None else None,
+                    trade_plan.direction,
+                ):
+                    execution_skipped += 1
+                    self.logger.info(
+                        "Entry skipped by Stochastic filter | "
+                        "symbol=%s | timeframe=%s | direction=%s",
+                        trade_plan.symbol,
+                        trade_plan.timeframe,
+                        trade_plan.direction.value,
+                    )
                     continue
 
                 if self._has_active_position(trade_plan.symbol):
